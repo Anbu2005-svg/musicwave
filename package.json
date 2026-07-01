@@ -1,0 +1,20 @@
+{
+  "name": "musicwave",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "build:client": "npm run build -w client",
+    "build:server": "npm run build -w server",
+    "prisma:generate": "npm run prisma:generate -w server",
+    "prisma:migrate": "npm run prisma:migrate -w server",
+    "prisma:deploy": "npm run prisma:deploy -w server",
+    "create:user": "npm run create:user -w server --",
+    "seed": "npm run seed -w server"
+  }
+}
