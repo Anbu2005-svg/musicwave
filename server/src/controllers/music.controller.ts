@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
-import { getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
+import { getPlaylistSongs, getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
 export async function search(req: Request, res: Response) {
@@ -53,6 +53,16 @@ export async function preferredPlaylists(req: AuthRequest, res: Response) {
   }
 
   res.json({ results: results.slice(0, 30) });
+}
+
+export async function playlistSongs(req: Request, res: Response) {
+  const playlistId = String(req.params.playlistId ?? "").trim();
+  if (!/^[a-zA-Z0-9_-]{10,80}$/.test(playlistId)) {
+    throw new ApiError(400, "Valid playlist ID is required");
+  }
+
+  const results = await getPlaylistSongs(playlistId);
+  res.json({ results });
 }
 
 export async function details(req: Request, res: Response) {

@@ -1,18 +1,27 @@
-import { ExternalLink } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ExternalLink, Play, Save } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { getErrorMessage, musicApi } from "../services/api";
+import { getErrorMessage, musicApi, playlistsApi } from "../services/api";
 import { useAuthStore } from "../stores/authStore";
+import { usePlayerStore } from "../stores/playerStore";
+import { useToastStore } from "../stores/toastStore";
 import type { OnlinePlaylist } from "../types";
 
-function PlaylistCard({ playlist }: { playlist: OnlinePlaylist }) {
+function PlaylistCard({
+  playlist,
+  busy,
+  onPlay,
+  onSave
+}: {
+  playlist: OnlinePlaylist;
+  busy: boolean;
+  onPlay: (playlist: OnlinePlaylist) => void;
+  onSave: (playlist: OnlinePlaylist) => void;
+}) {
   return (
-    <a
-      href={`https://www.youtube.com/playlist?list=${playlist.playlistId}`}
-      target="_blank"
-      rel="noreferrer"
-      className="group rounded-lg bg-panel p-3 transition hover:bg-zinc-800/80"
-    >
+    <article className="group rounded-lg bg-panel p-3 transition hover:bg-zinc-800/80">
       <div className="relative mb-3 aspect-video overflow-hidden rounded-lg bg-zinc-900">
         <img src={playlist.thumbnail} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
         <span className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white">
@@ -24,14 +33,45 @@ function PlaylistCard({ playlist }: { playlist: OnlinePlaylist }) {
           <h3 className="line-clamp-2 text-sm font-semibold leading-5">{playlist.title}</h3>
           <p className="mt-1 truncate text-xs text-zinc-400">{playlist.channelTitle}</p>
         </div>
-        <ExternalLink size={16} className="mt-0.5 shrink-0 text-zinc-400" />
+        <a
+          href={`https://www.youtube.com/playlist?list=${playlist.playlistId}`}
+          target="_blank"
+          rel="noreferrer"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-700 hover:text-white"
+          title="Open on YouTube"
+        >
+          <ExternalLink size={16} />
+        </a>
       </div>
-    </a>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-wave px-3 text-sm font-semibold text-black hover:brightness-110 disabled:opacity-50"
+          onClick={() => onPlay(playlist)}
+          disabled={busy}
+        >
+          <Play size={16} fill="currentColor" />
+          Play
+        </button>
+        <button
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm font-semibold hover:border-wave disabled:opacity-50"
+          onClick={() => onSave(playlist)}
+          disabled={busy}
+        >
+          <Save size={16} />
+          Save
+        </button>
+      </div>
+    </article>
   );
 }
 
 export default function OnlinePlaylistsPage() {
+  const [busyPlaylistId, setBusyPlaylistId] = useState<string | null>(null);
   const user = useAuthStore((state) => state.user);
+  const playTrack = usePlayerStore((state) => state.playTrack);
+  const showToast = useToastStore((state) => state.showToast);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const languages = user?.languagePreferences ?? [];
   const playlists = useQuery({
     queryKey: ["music", "preferred-playlists", languages],
@@ -42,6 +82,56 @@ export default function OnlinePlaylistsPage() {
     acc[playlist.language] = [...(acc[playlist.language] ?? []), playlist];
     return acc;
   }, {});
+
+  async function loadPlaylistSongs(playlist: OnlinePlaylist) {
+    setBusyPlaylistId(playlist.playlistId);
+    try {
+      const songs = await musicApi.playlistSongs(playlist.playlistId);
+      if (!songs.length) {
+        showToast("No playable songs found in this online playlist", "error");
+        return [];
+      }
+      return songs;
+    } catch (error) {
+      showToast(getErrorMessage(error), "error");
+      return [];
+    } finally {
+      setBusyPlaylistId(null);
+    }
+  }
+
+  async function playOnlinePlaylist(playlist: OnlinePlaylist) {
+    const songs = await loadPlaylistSongs(playlist);
+    if (!songs.length) return;
+    const [first, ...queue] = songs;
+    playTrack(first, queue);
+    showToast(`Playing ${playlist.title}`);
+  }
+
+  async function saveOnlinePlaylist(playlist: OnlinePlaylist) {
+    const songs = await loadPlaylistSongs(playlist);
+    if (!songs.length) return;
+
+    setBusyPlaylistId(playlist.playlistId);
+    try {
+      const saved = await playlistsApi.create({
+        name: playlist.title.slice(0, 100),
+        description: `Saved from online ${playlist.language} playlist by ${playlist.channelTitle}.`
+      });
+
+      for (const song of songs) {
+        await playlistsApi.addSong(saved.id, song);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      showToast("Online playlist saved");
+      navigate(`/playlists/${saved.id}`);
+    } catch (error) {
+      showToast(getErrorMessage(error), "error");
+    } finally {
+      setBusyPlaylistId(null);
+    }
+  }
 
   return (
     <div>
@@ -62,7 +152,13 @@ export default function OnlinePlaylistsPage() {
             <h2 className="mb-4 text-xl font-bold">{language} playlists</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((playlist) => (
-                <PlaylistCard key={playlist.playlistId} playlist={playlist} />
+                <PlaylistCard
+                  key={playlist.playlistId}
+                  playlist={playlist}
+                  busy={busyPlaylistId === playlist.playlistId}
+                  onPlay={playOnlinePlaylist}
+                  onSave={saveOnlinePlaylist}
+                />
               ))}
             </div>
           </section>

@@ -59,6 +59,10 @@ export const musicApi = {
   async preferredPlaylists() {
     const { data } = await api.get<{ results: OnlinePlaylist[] }>("/music/preferred-playlists");
     return data.results;
+  },
+  async playlistSongs(playlistId: string) {
+    const { data } = await api.get<{ results: MusicVideo[] }>(`/music/playlists/${playlistId}/songs`);
+    return data.results;
   }
 };
 

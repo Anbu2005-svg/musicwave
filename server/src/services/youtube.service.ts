@@ -67,6 +67,23 @@ function mapVideoItem(item: any): MusicVideo {
   };
 }
 
+function mapPlaylistVideoItem(item: any): MusicVideo {
+  const snippet = item.snippet ?? {};
+  return {
+    videoId: item.id,
+    title: snippet.title ?? "Untitled",
+    channelTitle: snippet.channelTitle ?? "Unknown artist",
+    thumbnail:
+      snippet.thumbnails?.maxres?.url ??
+      snippet.thumbnails?.high?.url ??
+      snippet.thumbnails?.medium?.url ??
+      snippet.thumbnails?.default?.url ??
+      "",
+    publishedAt: snippet.publishedAt ?? null,
+    description: snippet.description ?? ""
+  };
+}
+
 function mapPlaylistItem(item: any, language: string): OnlinePlaylist {
   const snippet = item.snippet ?? {};
   return {
@@ -159,6 +176,48 @@ export async function searchPlaylists(query: string, language: string, maxResult
     return (data.items ?? [])
       .map((item: any) => mapPlaylistItem(item, language))
       .filter((playlist: OnlinePlaylist) => playlist.playlistId);
+  } catch (error) {
+    handleYoutubeError(error);
+  }
+}
+
+export async function getPlaylistSongs(playlistId: string, maxResults = 40) {
+  const key = requireApiKey();
+
+  try {
+    const { data } = await youtube.get("/playlistItems", {
+      params: {
+        key,
+        part: "snippet",
+        playlistId,
+        maxResults
+      }
+    });
+
+    const ids = (data.items ?? [])
+      .map((item: any) => item.snippet?.resourceId?.videoId)
+      .filter(Boolean);
+
+    if (!ids.length) return [];
+
+    const { data: videos } = await youtube.get("/videos", {
+      params: {
+        key,
+        part: "snippet,status",
+        id: ids.join(",")
+      }
+    });
+
+    const byId = new Map(
+      (videos.items ?? [])
+        .filter((item: any) => item.status?.embeddable !== false)
+        .map((item: any) => [item.id, mapPlaylistVideoItem(item)])
+    );
+
+    return ids.flatMap((id: string) => {
+      const song = byId.get(id);
+      return song ? [song] : [];
+    });
   } catch (error) {
     handleYoutubeError(error);
   }
