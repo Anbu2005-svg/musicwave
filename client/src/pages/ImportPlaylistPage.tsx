@@ -1,5 +1,5 @@
-import { FormEvent, useMemo, useState } from "react";
-import { CheckCircle2, FileInput, Search, XCircle } from "lucide-react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { CheckCircle2, FileInput, Link2, Search, Upload, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage, musicApi, playlistsApi } from "../services/api";
 import { useToastStore } from "../stores/toastStore";
@@ -12,16 +12,106 @@ type ImportMatch = {
 };
 
 function parseTracks(input: string) {
-  return input
+  const trimmed = input.trim();
+
+  if (!trimmed) return [];
+
+  const jsonTracks = parseJsonTracks(trimmed);
+  if (jsonTracks.length) return jsonTracks.slice(0, 100);
+
+  const csvTracks = parseCsvTracks(trimmed);
+  if (csvTracks.length) return csvTracks.slice(0, 100);
+
+  return trimmed
     .split(/\r?\n/)
     .map((line) =>
       line
         .trim()
+        .replace(/^#EXTINF:[^,]*,/, "")
         .replace(/^\d+[\).\-\s]+/, "")
         .replace(/^["']|["']$/g, "")
+        .replace(/\.(mp3|m4a|flac|wav|aac|ogg)$/i, "")
     )
+    .map(normalizePlatformText)
     .filter((line) => line.length > 2)
-    .slice(0, 50);
+    .filter((line) => !/^https?:\/\//i.test(line))
+    .slice(0, 100);
+}
+
+function parseJsonTracks(input: string) {
+  try {
+    const data = JSON.parse(input);
+    const rows: unknown[] = Array.isArray(data) ? data : Array.isArray(data.tracks) ? data.tracks : Array.isArray(data.items) ? data.items : [];
+    return rows
+      .map((item: unknown) => {
+        if (typeof item === "string") return item;
+        if (!item || typeof item !== "object") return "";
+        const row = item as Record<string, any>;
+        const track = row.track ?? row;
+        const title = track.title ?? track.name ?? track.trackName;
+        const artist =
+          track.artist ??
+          track.artistName ??
+          track.artists?.map((entry: any) => entry.name ?? entry).join(" ") ??
+          track.album?.artists?.map((entry: any) => entry.name ?? entry).join(" ");
+        return [artist, title].filter(Boolean).join(" - ");
+      })
+      .map(normalizePlatformText)
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function parseCsvTracks(input: string) {
+  const lines = input.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2 || !lines[0].includes(",")) return [];
+
+  const headers = splitCsvLine(lines[0]).map((header) => header.toLowerCase().trim());
+  const titleIndex = findHeader(headers, ["title", "track", "track name", "name", "song"]);
+  const artistIndex = findHeader(headers, ["artist", "artist name", "artists", "album artist"]);
+
+  if (titleIndex < 0 && artistIndex < 0) return [];
+
+  return lines
+    .slice(1)
+    .map(splitCsvLine)
+    .map((columns) => [columns[artistIndex], columns[titleIndex]].filter(Boolean).join(" - "))
+    .map(normalizePlatformText)
+    .filter(Boolean);
+}
+
+function splitCsvLine(line: string) {
+  const values: string[] = [];
+  let value = "";
+  let quoted = false;
+
+  for (const char of line) {
+    if (char === "\"") {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      values.push(value.trim());
+      value = "";
+    } else {
+      value += char;
+    }
+  }
+
+  values.push(value.trim());
+  return values.map((entry) => entry.replace(/^"|"$/g, ""));
+}
+
+function findHeader(headers: string[], options: string[]) {
+  return headers.findIndex((header) => options.includes(header));
+}
+
+function normalizePlatformText(input: string) {
+  return input
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\b(open\.spotify|spotify|youtube|youtu\.be|music\.youtube|apple music|jiosaavn|gaana|wynk|soundcloud)\b/gi, "")
+    .replace(/\s+[-–—]\s+/g, " - ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export default function ImportPlaylistPage() {
@@ -35,6 +125,23 @@ export default function ImportPlaylistPage() {
 
   const parsedTracks = useMemo(() => parseTracks(rawTracks), [rawTracks]);
   const matchedCount = matches.filter((item) => item.match).length;
+
+  async function onFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    setPlaylistName(file.name.replace(/\.(txt|csv|json|m3u8?|xspf)$/i, "") || playlistName);
+    setRawTracks((current) => [current, text].filter(Boolean).join("\n"));
+    setMatches([]);
+  }
+
+  function addPlatformLink() {
+    const url = window.prompt("Paste a playlist or track link from Spotify, YouTube, Apple Music, SoundCloud, JioSaavn, Gaana, or another app");
+    if (!url) return;
+    setRawTracks((current) => [current, url].filter(Boolean).join("\n"));
+    showToast("Link added. Add track names too if the link does not contain readable song details.");
+  }
 
   async function matchTracks(event?: FormEvent) {
     event?.preventDefault();
@@ -115,7 +222,25 @@ export default function ImportPlaylistPage() {
               required
             />
           </label>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line px-4 font-semibold hover:border-wave">
+              <Upload size={18} />
+              Upload file
+              <input
+                type="file"
+                accept=".txt,.csv,.json,.m3u,.m3u8,.xspf,text/plain,text/csv,application/json"
+                className="hidden"
+                onChange={onFileUpload}
+              />
+            </label>
+            <button
+              type="button"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-line px-4 font-semibold hover:border-wave"
+              onClick={addPlatformLink}
+            >
+              <Link2 size={18} />
+              Add link
+            </button>
             <button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-wave px-5 font-semibold text-black hover:brightness-110 disabled:opacity-50" disabled={matching || !parsedTracks.length}>
               <Search size={18} />
               {matching ? "Matching..." : `Match ${parsedTracks.length || ""} songs`}
@@ -134,7 +259,12 @@ export default function ImportPlaylistPage() {
 
         <aside className="rounded-lg border border-line bg-zinc-950/60 p-5">
           <h2 className="mb-3 text-lg font-bold">Matched songs</h2>
-          {!matches.length && <p className="text-sm text-zinc-500">Paste songs and click match to preview YouTube results.</p>}
+          {!matches.length && (
+            <div className="space-y-3 text-sm text-zinc-500">
+              <p>Paste songs, upload a backup/export file, or add platform links, then match to preview YouTube results.</p>
+              <p>Supported uploads: TXT, CSV, JSON, M3U, M3U8, XSPF-style text. Platform exports work best when they include readable song and artist names.</p>
+            </div>
+          )}
           <div className="space-y-3">
             {matches.map((item) => (
               <div key={item.source} className="rounded-lg bg-panel p-3">

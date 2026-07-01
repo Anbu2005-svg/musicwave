@@ -1,5 +1,5 @@
 import { Heart, ListPlus, Play, Plus, SkipForward } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getErrorMessage, likedApi } from "../services/api";
 import { usePlayerStore } from "../stores/playerStore";
@@ -19,9 +19,14 @@ export default function SongCard({ song, queue = [] }: Props) {
   const playNext = usePlayerStore((state) => state.playNext);
   const showToast = useToastStore((state) => state.showToast);
   const queryClient = useQueryClient();
+  const liked = useQuery({ queryKey: ["liked"], queryFn: likedApi.list });
+  const isLiked = Boolean(liked.data?.some((likedSong) => likedSong.videoId === song.videoId));
   const likeMutation = useMutation({
     mutationFn: () => likedApi.like(song),
-    onSuccess: () => {
+    onSuccess: (savedSong) => {
+      queryClient.setQueryData<MusicVideo[]>(["liked"], (current = []) =>
+        current.some((likedSong) => likedSong.videoId === savedSong.videoId) ? current : [savedSong, ...current]
+      );
       queryClient.invalidateQueries({ queryKey: ["liked"] });
       showToast("Saved to Liked Songs");
     },
@@ -43,8 +48,15 @@ export default function SongCard({ song, queue = [] }: Props) {
       <h3 className="line-clamp-2 min-h-10 text-sm font-semibold leading-5">{song.title}</h3>
       <p className="mt-1 truncate text-xs text-zinc-400">{song.channelTitle}</p>
       <div className="mt-3 flex items-center gap-1">
-        <button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-zinc-700" onClick={() => likeMutation.mutate()} title="Like">
-          <Heart size={16} />
+        <button
+          className={`grid h-8 w-8 place-items-center rounded-lg hover:bg-zinc-700 ${isLiked ? "text-coral" : ""}`}
+          onClick={() => {
+            if (!isLiked) likeMutation.mutate();
+          }}
+          title={isLiked ? "Liked" : "Like"}
+          disabled={likeMutation.isPending}
+        >
+          <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
         </button>
         <button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-zinc-700" onClick={() => setPlaylistOpen(true)} title="Add to playlist">
           <Plus size={16} />
