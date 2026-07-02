@@ -15,24 +15,24 @@ export default function QueueDrawer() {
         onClick={() => setOpen(false)}
       />
       <aside
-        className={`fixed bottom-0 right-0 top-0 z-[60] w-[min(26rem,100vw)] border-l border-line bg-zinc-950 p-5 transition-transform ${
+        className={`fixed bottom-0 right-0 top-0 z-[60] flex w-[min(26rem,100vw)] flex-col border-l border-line bg-zinc-950 p-5 transition-transform ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-5 flex shrink-0 items-center justify-between">
           <h2 className="text-xl font-bold">Queue</h2>
           <button className="grid h-9 w-9 place-items-center rounded-lg hover:bg-zinc-800" onClick={() => setOpen(false)} title="Close queue">
             <X size={18} />
           </button>
         </div>
         <button
-          className="mb-4 rounded-lg border border-line px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900 disabled:opacity-40"
+          className="mb-4 w-fit shrink-0 rounded-lg border border-line px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900 disabled:opacity-40"
           onClick={clear}
           disabled={!queue.length}
         >
           Clear queue
         </button>
-        <div className="space-y-2">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {queue.length === 0 && <p className="text-sm text-zinc-500">Your next songs will appear here.</p>}
           {queue.map((song) => (
             <div key={song.videoId} className="flex items-center gap-3 rounded-lg bg-panel p-2">
