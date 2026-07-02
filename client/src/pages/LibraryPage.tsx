@@ -6,6 +6,7 @@ import LoadingSkeleton from "../components/LoadingSkeleton";
 import PlaylistCard from "../components/PlaylistCard";
 import { getErrorMessage, playlistsApi } from "../services/api";
 import { useToastStore } from "../stores/toastStore";
+import type { Playlist } from "../types";
 
 export default function LibraryPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -20,6 +21,20 @@ export default function LibraryPage() {
     },
     onError: (error) => showToast(getErrorMessage(error), "error")
   });
+  const deleteMutation = useMutation({
+    mutationFn: (playlist: Playlist) => playlistsApi.remove(playlist.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      showToast("Playlist deleted");
+    },
+    onError: (error) => showToast(getErrorMessage(error), "error")
+  });
+
+  function deletePlaylist(playlist: Playlist) {
+    const confirmed = window.confirm(`Delete "${playlist.name}" from your library?`);
+    if (!confirmed) return;
+    deleteMutation.mutate(playlist);
+  }
 
   return (
     <div>
@@ -41,7 +56,12 @@ export default function LibraryPage() {
       {!!playlists.data?.length && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {playlists.data.map((playlist) => (
-            <PlaylistCard key={playlist.id} playlist={playlist} />
+            <PlaylistCard
+              key={playlist.id}
+              playlist={playlist}
+              onDelete={deletePlaylist}
+              deleting={deleteMutation.isPending && deleteMutation.variables?.id === playlist.id}
+            />
           ))}
         </div>
       )}
