@@ -111,6 +111,28 @@ export async function addSong(req: AuthRequest, res: Response) {
   res.status(201).json({ song });
 }
 
+export async function addSongs(req: AuthRequest, res: Response) {
+  const user = requireUser(req);
+  await findOwnedPlaylist(req.params.id, user.id);
+  const input = songSchema.array().min(1).max(100).parse(req.body.songs);
+  const songs = input.map((song) => ({
+    playlistId: req.params.id,
+    videoId: song.videoId,
+    title: song.title,
+    channelTitle: song.channelTitle,
+    thumbnail: song.thumbnail,
+    publishedAt: song.publishedAt ? new Date(song.publishedAt) : null
+  }));
+
+  const result = await prisma.playlistSong.createMany({
+    data: songs,
+    skipDuplicates: true
+  });
+
+  await prisma.playlist.update({ where: { id: req.params.id }, data: { updatedAt: new Date() } });
+  res.status(201).json({ count: result.count });
+}
+
 export async function removeSong(req: AuthRequest, res: Response) {
   const user = requireUser(req);
   await findOwnedPlaylist(req.params.id, user.id);

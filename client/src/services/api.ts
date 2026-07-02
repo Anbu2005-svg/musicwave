@@ -90,6 +90,10 @@ export const playlistsApi = {
     const { data } = await api.post<{ song: StoredSong }>(`/playlists/${id}/songs`, song);
     return data.song;
   },
+  async addSongs(id: string, songs: MusicVideo[]) {
+    const { data } = await api.post<{ count: number }>(`/playlists/${id}/songs/bulk`, { songs });
+    return data.count;
+  },
   async removeSong(id: string, videoId: string) {
     await api.delete(`/playlists/${id}/songs/${videoId}`);
   }

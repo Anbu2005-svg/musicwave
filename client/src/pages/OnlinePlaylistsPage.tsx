@@ -119,12 +119,11 @@ export default function OnlinePlaylistsPage() {
         description: `Saved from online ${playlist.language} playlist by ${playlist.channelTitle}.`
       });
 
-      for (const song of songs) {
-        await playlistsApi.addSong(saved.id, song);
-      }
+      const savedCount = await playlistsApi.addSongs(saved.id, songs);
 
       queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      showToast("Online playlist saved");
+      queryClient.invalidateQueries({ queryKey: ["playlist", saved.id] });
+      showToast(`Saved ${savedCount} songs`);
       navigate(`/playlists/${saved.id}`);
     } catch (error) {
       showToast(getErrorMessage(error), "error");

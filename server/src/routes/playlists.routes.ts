@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addSong,
+  addSongs,
   createPlaylist,
   deletePlaylist,
   getPlaylist,
@@ -19,6 +20,7 @@ router.get("/", asyncHandler(listPlaylists));
 router.get("/:id", asyncHandler(getPlaylist));
 router.put("/:id", asyncHandler(updatePlaylist));
 router.delete("/:id", asyncHandler(deletePlaylist));
+router.post("/:id/songs/bulk", asyncHandler(addSongs));
 router.post("/:id/songs", asyncHandler(addSong));
 router.delete("/:id/songs/:videoId", asyncHandler(removeSong));
 
