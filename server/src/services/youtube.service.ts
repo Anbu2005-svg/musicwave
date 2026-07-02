@@ -18,6 +18,7 @@ export type OnlinePlaylist = {
   publishedAt: string | null;
   description: string;
   language: string;
+  category?: string;
 };
 
 const youtube = axios.create({
@@ -84,7 +85,7 @@ function mapPlaylistVideoItem(item: any): MusicVideo {
   };
 }
 
-function mapPlaylistItem(item: any, language: string): OnlinePlaylist {
+function mapPlaylistItem(item: any, language: string, category?: string): OnlinePlaylist {
   const snippet = item.snippet ?? {};
   return {
     playlistId: item.id?.playlistId,
@@ -98,7 +99,8 @@ function mapPlaylistItem(item: any, language: string): OnlinePlaylist {
       "",
     publishedAt: snippet.publishedAt ?? null,
     description: snippet.description ?? "",
-    language
+    language,
+    category
   };
 }
 
@@ -159,7 +161,7 @@ export async function getTrendingMusic(maxResults = 20) {
   }
 }
 
-export async function searchPlaylists(query: string, language: string, maxResults = 8) {
+export async function searchPlaylists(query: string, language: string, maxResults = 8, category?: string) {
   const key = requireApiKey();
 
   try {
@@ -174,7 +176,7 @@ export async function searchPlaylists(query: string, language: string, maxResult
     });
 
     return (data.items ?? [])
-      .map((item: any) => mapPlaylistItem(item, language))
+      .map((item: any) => mapPlaylistItem(item, language, category))
       .filter((playlist: OnlinePlaylist) => playlist.playlistId);
   } catch (error) {
     handleYoutubeError(error);

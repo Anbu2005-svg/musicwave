@@ -67,6 +67,7 @@ function PlaylistCard({
 
 export default function OnlinePlaylistsPage() {
   const [busyPlaylistId, setBusyPlaylistId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState("All");
   const user = useAuthStore((state) => state.user);
   const playTrack = usePlayerStore((state) => state.playTrack);
   const showToast = useToastStore((state) => state.showToast);
@@ -78,7 +79,11 @@ export default function OnlinePlaylistsPage() {
     queryFn: musicApi.preferredPlaylists
   });
 
-  const grouped = (playlists.data ?? []).reduce<Record<string, OnlinePlaylist[]>>((acc, playlist) => {
+  const categories = ["All", ...Array.from(new Set((playlists.data ?? []).map((playlist) => playlist.category).filter(Boolean)))] as string[];
+  const filteredPlaylists = activeCategory === "All"
+    ? playlists.data ?? []
+    : (playlists.data ?? []).filter((playlist) => playlist.category === activeCategory);
+  const grouped = filteredPlaylists.reduce<Record<string, OnlinePlaylist[]>>((acc, playlist) => {
     acc[playlist.language] = [...(acc[playlist.language] ?? []), playlist];
     return acc;
   }, {});
@@ -136,7 +141,10 @@ export default function OnlinePlaylistsPage() {
     <div>
       <section className="mb-8">
         <p className="text-sm font-semibold text-wave">Online playlists</p>
-        <h1 className="mt-2 text-3xl font-black">Suggested for your languages</h1>
+        <h1 className="mt-2 text-3xl font-black">All playlists for your languages</h1>
+        <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+          Browse latest releases, yearly hits, classics, and mood playlists from new to old.
+        </p>
       </section>
 
       {playlists.isLoading && <LoadingSkeleton rows={8} />}
@@ -145,10 +153,31 @@ export default function OnlinePlaylistsPage() {
         <p className="text-sm text-zinc-500">No playlist suggestions found yet.</p>
       )}
 
+      {!!categories.length && (
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+          {categories.map((category) => (
+            <button
+              key={category}
+              className={`h-9 shrink-0 rounded-full px-4 text-sm font-bold transition ${
+                activeCategory === category
+                  ? "bg-white text-black"
+                  : "bg-white/10 text-zinc-300 hover:bg-white/15 hover:text-white"
+              }`}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-9">
         {Object.entries(grouped).map(([language, items]) => (
           <section key={language}>
-            <h2 className="mb-4 text-xl font-bold">{language} playlists</h2>
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <h2 className="text-xl font-bold">{language} playlists</h2>
+              <span className="text-sm text-zinc-500">{items.length} found</span>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((playlist) => (
                 <PlaylistCard

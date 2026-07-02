@@ -40,4 +40,5 @@ export type OnlinePlaylist = {
   publishedAt: string | null;
   description?: string;
   language: string;
+  category?: string;
 };

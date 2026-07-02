@@ -3,6 +3,19 @@ import { ApiError } from "../utils/ApiError.js";
 import { getPlaylistSongs, getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
+const playlistDiscoveryCategories = [
+  { label: "Latest", query: (language: string) => `${language} latest songs playlist 2026 new releases` },
+  { label: "New Songs", query: (language: string) => `${language} new songs playlist 2025 2026` },
+  { label: "2024 Hits", query: (language: string) => `${language} songs playlist 2024 hits` },
+  { label: "All Time Hits", query: (language: string) => `${language} all time hit songs playlist` },
+  { label: "Classics", query: (language: string) => `${language} old classic songs playlist` },
+  { label: "90s", query: (language: string) => `${language} 90s songs playlist` },
+  { label: "2000s", query: (language: string) => `${language} 2000s songs playlist` },
+  { label: "Melody", query: (language: string) => `${language} melody songs playlist` },
+  { label: "Dance", query: (language: string) => `${language} dance songs playlist` },
+  { label: "Romantic", query: (language: string) => `${language} romantic songs playlist` }
+];
+
 export async function search(req: Request, res: Response) {
   const q = String(req.query.q ?? "").trim();
   if (!q) {
@@ -43,16 +56,18 @@ export async function preferredPlaylists(req: AuthRequest, res: Response) {
   const seen = new Set<string>();
 
   for (const language of languages.slice(0, 6)) {
-    const playlists = await searchPlaylists(`${language} music playlist songs`, language, 6);
-    for (const playlist of playlists) {
-      if (!seen.has(playlist.playlistId)) {
-        seen.add(playlist.playlistId);
-        results.push(playlist);
+    for (const category of playlistDiscoveryCategories) {
+      const playlists = await searchPlaylists(category.query(language), language, 5, category.label);
+      for (const playlist of playlists) {
+        if (!seen.has(playlist.playlistId)) {
+          seen.add(playlist.playlistId);
+          results.push(playlist);
+        }
       }
     }
   }
 
-  res.json({ results: results.slice(0, 30) });
+  res.json({ results: results.slice(0, 240) });
 }
 
 export async function playlistSongs(req: Request, res: Response) {
