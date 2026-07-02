@@ -14,11 +14,11 @@ export default function Layout() {
   const shouldAskPreferences = Boolean(user && (!user.languagePreferences || user.languagePreferences.length === 0));
 
   return (
-    <div className="min-h-screen bg-ink text-zinc-50">
+    <div className="min-h-screen bg-transparent text-zinc-50">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onPreferences={() => setPreferencesOpen(true)} />
-      <div className="min-h-screen pb-72 sm:pb-56 lg:pl-72">
+      <div className="min-h-screen pb-72 sm:pb-56 lg:pl-[18.5rem]">
         <Topbar onMenu={() => setSidebarOpen(true)} />
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[92rem] px-4 py-5 sm:px-6 lg:px-7">
           <Outlet />
         </main>
       </div>

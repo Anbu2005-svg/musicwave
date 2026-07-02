@@ -58,7 +58,7 @@ export default function PlayerBar() {
   if (!current) return null;
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-black px-3 py-3 text-white lg:left-72">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/95 px-3 py-3 text-white backdrop-blur lg:left-[18.5rem]">
       <div className="mx-auto grid max-w-7xl gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,2fr)_minmax(0,1fr)] lg:items-center">
         <div className="flex min-w-0 items-center gap-3">
           <img src={current.thumbnail} alt="" className="h-12 w-12 rounded-lg object-cover sm:h-14 sm:w-14" />
@@ -70,20 +70,20 @@ export default function PlayerBar() {
 
         <div className="min-w-0">
           <div className="mb-2 flex items-center justify-center gap-1 sm:gap-2">
-            <button className="grid h-8 w-8 place-items-center rounded-full text-emerald-500 hover:bg-zinc-900" onClick={shuffleQueue} title="Shuffle queue">
+            <button className="grid h-8 w-8 place-items-center rounded-full text-emerald-500 hover:bg-white/10" onClick={shuffleQueue} title="Shuffle queue">
               <Shuffle size={17} />
             </button>
-            <button className="grid h-8 w-8 place-items-center rounded-full text-zinc-300 hover:bg-zinc-900" onClick={previous} title="Previous">
+            <button className="grid h-8 w-8 place-items-center rounded-full text-zinc-300 hover:bg-white/10" onClick={previous} title="Previous">
               <SkipBack size={18} fill="currentColor" />
             </button>
-            <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-black hover:scale-105" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
+            <button className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-lg transition hover:scale-105" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
               {isPlaying ? <Pause size={21} fill="currentColor" /> : <Play size={21} fill="currentColor" className="ml-0.5" />}
             </button>
-            <button className="grid h-8 w-8 place-items-center rounded-full text-zinc-300 hover:bg-zinc-900" onClick={next} title="Next">
+            <button className="grid h-8 w-8 place-items-center rounded-full text-zinc-300 hover:bg-white/10" onClick={next} title="Next">
               <SkipForward size={18} fill="currentColor" />
             </button>
             <button
-              className={`grid h-8 w-8 place-items-center rounded-full hover:bg-zinc-900 ${repeatCurrent ? "text-emerald-500" : "text-zinc-300"}`}
+              className={`grid h-8 w-8 place-items-center rounded-full hover:bg-white/10 ${repeatCurrent ? "text-emerald-500" : "text-zinc-300"}`}
               onClick={toggleRepeat}
               title="Repeat current"
             >
@@ -100,17 +100,17 @@ export default function PlayerBar() {
               step="1"
               value={Math.min(currentTime, duration || 0)}
               onChange={(event) => seekTo(Number(event.target.value))}
-              className="h-1 flex-1 accent-white"
+              className="h-1 flex-1 accent-wave"
             />
             <span className="w-10 text-xs tabular-nums text-zinc-300">{formatTime(duration)}</span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
-          <button className="grid h-9 w-9 place-items-center rounded-lg hover:bg-zinc-900" onClick={() => seekBy(-skipSeconds)} title={`Back ${skipSeconds}s`}>
+          <button className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" onClick={() => seekBy(-skipSeconds)} title={`Back ${skipSeconds}s`}>
             <Rewind size={17} />
           </button>
-          <button className="grid h-9 w-9 place-items-center rounded-lg hover:bg-zinc-900" onClick={() => seekBy(skipSeconds)} title={`Forward ${skipSeconds}s`}>
+          <button className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10" onClick={() => seekBy(skipSeconds)} title={`Forward ${skipSeconds}s`}>
             <FastForward size={17} />
           </button>
           <input
@@ -121,18 +121,18 @@ export default function PlayerBar() {
             step="5"
             value={skipSeconds}
             onChange={(event) => setSkipSeconds(Number(event.target.value) || 10)}
-            className="h-9 w-16 rounded-lg border border-line bg-zinc-900 px-2 text-sm outline-none focus:border-wave"
+            className="h-9 w-16 rounded-full border border-white/10 bg-zinc-900 px-2 text-sm outline-none focus:border-wave"
             title="Seek seconds"
           />
           <button
-            className="grid h-9 w-9 place-items-center rounded-lg hover:bg-zinc-900"
+            className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10"
             onClick={() => setQueueOpen(true)}
             title="Open queue"
           >
             <ListMusic size={17} />
           </button>
           <button
-            className={`inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm hover:bg-zinc-900 ${sleepTimerEndsAt ? "text-wave" : ""}`}
+            className={`inline-flex h-9 items-center gap-1 rounded-full px-2 text-sm hover:bg-white/10 ${sleepTimerEndsAt ? "text-wave" : ""}`}
             onClick={() => (sleepTimerEndsAt ? clearSleepTimer() : startSleepTimer(60))}
             title={sleepTimerEndsAt ? "Cancel sleep timer" : "Pause after 1 hour"}
           >
@@ -147,7 +147,7 @@ export default function PlayerBar() {
             max="100"
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
-            className="hidden w-20 accent-white sm:block"
+            className="hidden w-20 accent-wave sm:block"
           />
         </div>
       </div>

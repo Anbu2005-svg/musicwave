@@ -34,11 +34,11 @@ export default function SongCard({ song, queue = [] }: Props) {
   });
 
   return (
-    <article className="group w-44 shrink-0 rounded-lg bg-panel p-3 transition hover:bg-zinc-800/80">
+    <article className="group w-44 shrink-0 rounded-lg bg-zinc-900/70 p-3 transition duration-200 hover:bg-zinc-800 hover:shadow-xl hover:shadow-black/30">
       <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-zinc-900">
         <img src={song.thumbnail} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
         <button
-          className="absolute bottom-2 right-2 grid h-11 w-11 place-items-center rounded-lg bg-wave text-black opacity-0 shadow-glow transition hover:brightness-110 group-hover:opacity-100"
+          className="absolute bottom-2 right-2 grid h-11 w-11 translate-y-2 place-items-center rounded-full bg-wave text-black opacity-0 shadow-glow transition hover:scale-105 group-hover:translate-y-0 group-hover:opacity-100"
           onClick={() => playTrack(song, queue.filter((item) => item.videoId !== song.videoId))}
           title="Play"
         >

@@ -36,7 +36,7 @@ export default function SongRow({ song, queue = [], onRemove }: Props) {
   });
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-zinc-900 sm:grid-cols-[auto_1fr_10rem_auto]">
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg px-2 py-2 transition hover:bg-white/5 sm:grid-cols-[auto_1fr_10rem_auto]">
       <button
         className="relative h-14 w-14 overflow-hidden rounded-lg bg-zinc-900"
         onClick={() => playTrack(song, queue.filter((item) => item.videoId !== song.videoId))}

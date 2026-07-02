@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Grid2X2, Plus } from "lucide-react";
 import { useState } from "react";
 import CreatePlaylistModal from "../components/CreatePlaylistModal";
 import LoadingSkeleton from "../components/LoadingSkeleton";
@@ -38,13 +38,17 @@ export default function LibraryPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-lg bg-gradient-to-b from-zinc-800/80 to-zinc-950/30 p-5">
         <div>
-          <h1 className="text-3xl font-black">Library</h1>
+          <p className="mb-2 flex items-center gap-2 text-sm font-bold text-zinc-400">
+            <Grid2X2 size={17} />
+            Collection
+          </p>
+          <h1 className="text-3xl font-black sm:text-5xl">Your Library</h1>
           <p className="mt-1 text-sm text-zinc-500">Your playlists and saved collections.</p>
         </div>
         <button
-          className="inline-flex h-11 items-center gap-2 rounded-lg bg-wave px-4 font-semibold text-black hover:brightness-110"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-wave px-5 font-bold text-black hover:scale-[1.02]"
           onClick={() => setModalOpen(true)}
         >
           <Plus size={18} />
@@ -54,7 +58,13 @@ export default function LibraryPage() {
       {playlists.isLoading && <LoadingSkeleton rows={5} />}
       {playlists.error && <p className="rounded-lg border border-coral/30 bg-coral/10 p-4 text-sm text-rose-100">{getErrorMessage(playlists.error)}</p>}
       {!!playlists.data?.length && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">Playlists</span>
+          <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-zinc-300">Saved online mixes</span>
+        </div>
+      )}
+      {!!playlists.data?.length && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
           {playlists.data.map((playlist) => (
             <PlaylistCard
               key={playlist.id}
