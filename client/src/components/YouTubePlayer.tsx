@@ -27,6 +27,7 @@ function loadYouTubeApi() {
 export default function YouTubePlayer() {
   const containerId = useRef(`youtube-player-${crypto.randomUUID()}`);
   const playerRef = useRef<any>(null);
+  const isPlayingRef = useRef(false);
   const [ready, setReady] = useState(false);
   const current = usePlayerStore((state) => state.current);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
@@ -37,6 +38,10 @@ export default function YouTubePlayer() {
   const togglePlay = usePlayerStore((state) => state.togglePlay);
   const seekBy = usePlayerStore((state) => state.seekBy);
   const next = usePlayerStore((state) => state.next);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   useEffect(() => {
     let mounted = true;
@@ -59,8 +64,18 @@ export default function YouTubePlayer() {
           onReady: (event: any) => {
             event.target?.setPlaybackQuality?.("small");
             setReady(true);
+            if (isPlayingRef.current) {
+              event.target?.playVideo?.();
+            }
           },
           onStateChange: (event: any) => {
+            if (
+              isPlayingRef.current &&
+              (event.data === window.YT.PlayerState.CUED || event.data === window.YT.PlayerState.PAUSED)
+            ) {
+              event.target?.playVideo?.();
+              return;
+            }
             if (event.data === window.YT.PlayerState.ENDED) {
               if (repeatCurrent) {
                 event.target?.seekTo?.(0, true);
@@ -82,7 +97,10 @@ export default function YouTubePlayer() {
   useEffect(() => {
     if (!ready || !current || !playerRef.current?.loadVideoById) return;
     playerRef.current.loadVideoById({ videoId: current.videoId, suggestedQuality: "small" });
-  }, [current, ready]);
+    if (isPlaying) {
+      window.setTimeout(() => playerRef.current?.playVideo?.(), 150);
+    }
+  }, [current, isPlaying, ready]);
 
   useEffect(() => {
     if (!current || !("mediaSession" in navigator)) return;
@@ -143,7 +161,7 @@ export default function YouTubePlayer() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed bottom-0 right-0 h-px w-px overflow-hidden opacity-0"
+      className="pointer-events-none fixed bottom-0 right-0 -z-10 h-[200px] w-[200px] overflow-hidden opacity-0"
     >
       <div id={containerId.current} className="h-full w-full" />
     </div>
