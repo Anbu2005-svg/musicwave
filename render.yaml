@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: musicwave
+    runtime: node
+    plan: free
+    buildCommand: npm run render:build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: VITE_API_BASE_URL
+        value: /api
+      - key: CLIENT_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
