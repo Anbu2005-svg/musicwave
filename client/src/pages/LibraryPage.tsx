@@ -8,11 +8,21 @@ import { getErrorMessage, playlistsApi } from "../services/api";
 import { useToastStore } from "../stores/toastStore";
 import type { Playlist } from "../types";
 
+type LibraryTab = "playlists" | "online";
+
+function isOnlineMix(playlist: Playlist) {
+  return playlist.source === "ONLINE" || playlist.description?.toLowerCase().startsWith("saved from online");
+}
+
 export default function LibraryPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<LibraryTab>("playlists");
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
   const playlists = useQuery({ queryKey: ["playlists"], queryFn: playlistsApi.list });
+  const userPlaylists = playlists.data?.filter((playlist) => !isOnlineMix(playlist)) ?? [];
+  const onlineMixes = playlists.data?.filter(isOnlineMix) ?? [];
+  const visiblePlaylists = activeTab === "playlists" ? userPlaylists : onlineMixes;
   const createMutation = useMutation({
     mutationFn: playlistsApi.create,
     onSuccess: () => {
@@ -59,13 +69,27 @@ export default function LibraryPage() {
       {playlists.error && <p className="rounded-lg border border-coral/30 bg-coral/10 p-4 text-sm text-rose-100">{getErrorMessage(playlists.error)}</p>}
       {!!playlists.data?.length && (
         <div className="mb-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-white px-4 py-2 text-sm font-bold text-black">Playlists</span>
-          <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-zinc-300">Saved online mixes</span>
+          <button
+            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+              activeTab === "playlists" ? "bg-white text-black" : "bg-white/10 text-zinc-300 hover:bg-white/15 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("playlists")}
+          >
+            Playlists {userPlaylists.length ? `(${userPlaylists.length})` : ""}
+          </button>
+          <button
+            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+              activeTab === "online" ? "bg-white text-black" : "bg-white/10 text-zinc-300 hover:bg-white/15 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("online")}
+          >
+            Saved online mixes {onlineMixes.length ? `(${onlineMixes.length})` : ""}
+          </button>
         </div>
       )}
       {!!playlists.data?.length && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-          {playlists.data.map((playlist) => (
+          {visiblePlaylists.map((playlist) => (
             <PlaylistCard
               key={playlist.id}
               playlist={playlist}
@@ -76,6 +100,11 @@ export default function LibraryPage() {
         </div>
       )}
       {!playlists.isLoading && playlists.data?.length === 0 && <p className="text-sm text-zinc-500">No playlists yet.</p>}
+      {!playlists.isLoading && !!playlists.data?.length && visiblePlaylists.length === 0 && (
+        <p className="text-sm text-zinc-500">
+          {activeTab === "playlists" ? "No manual playlists yet." : "No saved online mixes yet."}
+        </p>
+      )}
       <CreatePlaylistModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

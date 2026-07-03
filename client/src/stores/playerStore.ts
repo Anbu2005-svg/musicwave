@@ -21,6 +21,7 @@ type PlayerState = {
   previous: () => void;
   addToQueue: (track: MusicVideo) => void;
   playNext: (track: MusicVideo) => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
   shuffleQueue: () => void;
   toggleRepeat: () => void;
   startSleepTimer: (minutes: number) => void;
@@ -98,6 +99,23 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set((state) => ({
       queue: [track, ...state.queue.filter((song) => song.videoId !== track.videoId)]
     })),
+  reorderQueue: (fromIndex, toIndex) =>
+    set((state) => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= state.queue.length ||
+        toIndex >= state.queue.length
+      ) {
+        return state;
+      }
+
+      const queue = [...state.queue];
+      const [moved] = queue.splice(fromIndex, 1);
+      queue.splice(toIndex, 0, moved);
+      return { queue };
+    }),
   shuffleQueue: () =>
     set((state) => ({
       queue: [...state.queue].sort(() => Math.random() - 0.5)

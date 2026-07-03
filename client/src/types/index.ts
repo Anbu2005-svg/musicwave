@@ -26,6 +26,7 @@ export type Playlist = {
   id: string;
   name: string;
   description?: string | null;
+  source?: "USER" | "ONLINE";
   coverImage?: string | null;
   createdAt: string;
   updatedAt: string;

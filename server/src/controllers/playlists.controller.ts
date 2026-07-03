@@ -2,7 +2,7 @@ import type { Response } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { ApiError } from "../utils/ApiError.js";
 import { prisma } from "../utils/prisma.js";
-import { playlistSchema } from "../validators/playlist.validators.js";
+import { createPlaylistSchema, playlistSchema } from "../validators/playlist.validators.js";
 import { songSchema } from "../validators/song.validators.js";
 
 function requireUser(req: AuthRequest) {
@@ -34,9 +34,9 @@ function withCover<T extends { songs?: { thumbnail: string }[] }>(playlist: T) {
 
 export async function createPlaylist(req: AuthRequest, res: Response) {
   const user = requireUser(req);
-  const input = playlistSchema.parse(req.body);
+  const input = createPlaylistSchema.parse(req.body);
   const playlist = await prisma.playlist.create({
-    data: { ...input, userId: user.id },
+    data: { ...input, userId: user.id, source: input.source ?? "USER" },
     include: { songs: true }
   });
 

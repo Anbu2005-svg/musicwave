@@ -75,7 +75,7 @@ export const playlistsApi = {
     const { data } = await api.get<{ playlist: Playlist }>(`/playlists/${id}`);
     return data.playlist;
   },
-  async create(input: { name: string; description?: string }) {
+  async create(input: { name: string; description?: string; source?: "USER" | "ONLINE" }) {
     const { data } = await api.post<{ playlist: Playlist }>("/playlists", input);
     return data.playlist;
   },

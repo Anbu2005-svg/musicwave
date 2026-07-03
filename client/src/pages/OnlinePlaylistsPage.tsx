@@ -121,7 +121,8 @@ export default function OnlinePlaylistsPage() {
     try {
       const saved = await playlistsApi.create({
         name: playlist.title.slice(0, 100),
-        description: `Saved from online ${playlist.language} playlist by ${playlist.channelTitle}.`
+        description: `Saved from online ${playlist.language} playlist by ${playlist.channelTitle}.`,
+        source: "ONLINE"
       });
 
       const savedCount = await playlistsApi.addSongs(saved.id, songs);
