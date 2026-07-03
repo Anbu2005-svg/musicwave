@@ -48,7 +48,7 @@ export async function listPlaylists(req: AuthRequest, res: Response) {
   const playlists = await prisma.playlist.findMany({
     where: { userId: user.id },
     orderBy: { updatedAt: "desc" },
-    include: { songs: { orderBy: { addedAt: "asc" }, take: 1 } }
+    include: { songs: { orderBy: { addedAt: "asc" } } }
   });
 
   res.json({ playlists: playlists.map(withCover) });
@@ -114,7 +114,7 @@ export async function addSong(req: AuthRequest, res: Response) {
 export async function addSongs(req: AuthRequest, res: Response) {
   const user = requireUser(req);
   await findOwnedPlaylist(req.params.id, user.id);
-  const input = songSchema.array().min(1).max(100).parse(req.body.songs);
+  const input = songSchema.array().min(1).max(250).parse(req.body.songs);
   const songs = input.map((song) => ({
     playlistId: req.params.id,
     videoId: song.videoId,

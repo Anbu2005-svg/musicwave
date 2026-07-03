@@ -183,35 +183,50 @@ export async function searchPlaylists(query: string, language: string, maxResult
   }
 }
 
-export async function getPlaylistSongs(playlistId: string, maxResults = 40) {
+export async function getPlaylistSongs(playlistId: string, maxResults = 200) {
   const key = requireApiKey();
 
   try {
-    const { data } = await youtube.get("/playlistItems", {
-      params: {
-        key,
-        part: "snippet",
-        playlistId,
-        maxResults
-      }
-    });
+    const ids: string[] = [];
+    let pageToken: string | undefined;
 
-    const ids = (data.items ?? [])
-      .map((item: any) => item.snippet?.resourceId?.videoId)
-      .filter(Boolean);
+    while (ids.length < maxResults) {
+      const { data } = await youtube.get("/playlistItems", {
+        params: {
+          key,
+          part: "snippet",
+          playlistId,
+          maxResults: Math.min(50, maxResults - ids.length),
+          pageToken
+        }
+      });
+
+      ids.push(
+        ...(data.items ?? [])
+          .map((item: any) => item.snippet?.resourceId?.videoId)
+          .filter(Boolean)
+      );
+
+      pageToken = data.nextPageToken;
+      if (!pageToken) break;
+    }
 
     if (!ids.length) return [];
 
-    const { data: videos } = await youtube.get("/videos", {
-      params: {
-        key,
-        part: "snippet,status",
-        id: ids.join(",")
-      }
-    });
+    const videoItems = [];
+    for (let index = 0; index < ids.length; index += 50) {
+      const { data: videos } = await youtube.get("/videos", {
+        params: {
+          key,
+          part: "snippet,status",
+          id: ids.slice(index, index + 50).join(",")
+        }
+      });
+      videoItems.push(...(videos.items ?? []));
+    }
 
     const byId = new Map(
-      (videos.items ?? [])
+      videoItems
         .filter((item: any) => item.status?.embeddable !== false)
         .map((item: any) => [item.id, mapPlaylistVideoItem(item)])
     );
