@@ -36,9 +36,10 @@ export default function YouTubePlayer() {
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const setPlaybackTime = usePlayerStore((state) => state.setPlaybackTime);
   const repeatCurrent = usePlayerStore((state) => state.repeatCurrent);
-  const togglePlay = usePlayerStore((state) => state.togglePlay);
+  const pause = usePlayerStore((state) => state.pause);
   const seekBy = usePlayerStore((state) => state.seekBy);
   const next = usePlayerStore((state) => state.next);
+  const previous = usePlayerStore((state) => state.previous);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -117,18 +118,19 @@ export default function YouTubePlayer() {
       artist: current.channelTitle,
       artwork: current.thumbnail ? [{ src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }] : []
     });
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
 
     navigator.mediaSession.setActionHandler("play", () => {
-      if (!isPlaying) togglePlay();
+      usePlayerStore.setState({ isPlaying: true });
     });
     navigator.mediaSession.setActionHandler("pause", () => {
-      if (isPlaying) togglePlay();
+      pause();
     });
-    navigator.mediaSession.setActionHandler("previoustrack", () => undefined);
+    navigator.mediaSession.setActionHandler("previoustrack", previous);
     navigator.mediaSession.setActionHandler("nexttrack", next);
     navigator.mediaSession.setActionHandler("seekbackward", () => seekBy(-10));
     navigator.mediaSession.setActionHandler("seekforward", () => seekBy(10));
-  }, [current, isPlaying, next, seekBy, togglePlay]);
+  }, [current, isPlaying, next, pause, previous, seekBy]);
 
   useEffect(() => {
     if (!ready || !playerRef.current) return;
