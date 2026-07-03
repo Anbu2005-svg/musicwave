@@ -1,4 +1,4 @@
-import { FastForward, ListMusic, Pause, Play, Plus, Repeat, Rewind, Shuffle, SkipBack, SkipForward, Timer, Volume2 } from "lucide-react";
+import { FastForward, ListMusic, Pause, Play, Plus, Repeat, Rewind, Shuffle, SkipBack, SkipForward, SlidersHorizontal, Timer, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePlayerStore } from "../stores/playerStore";
 import AddToPlaylistModal from "./AddToPlaylistModal";
@@ -12,9 +12,21 @@ function formatTime(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
+const equalizerPresets = [
+  { name: "Balanced", bands: [45, 58, 62, 58, 45] },
+  { name: "Bass", bands: [86, 78, 56, 42, 34] },
+  { name: "Vocal", bands: [38, 48, 82, 72, 46] },
+  { name: "Bright", bands: [35, 46, 58, 76, 88] },
+  { name: "Night", bands: [28, 38, 45, 38, 28] }
+];
+
 export default function PlayerBar() {
   const [now, setNow] = useState(Date.now());
   const [playlistOpen, setPlaylistOpen] = useState(false);
+  const [equalizerOpen, setEqualizerOpen] = useState(false);
+  const [equalizerPreset, setEqualizerPreset] = useState(
+    () => localStorage.getItem("musicwave_equalizer") ?? "Balanced"
+  );
   const current = usePlayerStore((state) => state.current);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const volume = usePlayerStore((state) => state.volume);
@@ -56,6 +68,14 @@ export default function PlayerBar() {
     const seconds = remaining % 60;
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   }, [now, sleepTimerEndsAt]);
+
+  const selectedPreset = equalizerPresets.find((preset) => preset.name === equalizerPreset) ?? equalizerPresets[0];
+
+  function selectEqualizerPreset(name: string) {
+    setEqualizerPreset(name);
+    localStorage.setItem("musicwave_equalizer", name);
+    setEqualizerOpen(false);
+  }
 
   if (!current) return null;
 
@@ -148,6 +168,59 @@ export default function PlayerBar() {
             <Timer size={17} />
             <span className="tabular-nums">{sleepTimerEndsAt ? sleepRemaining : "1h"}</span>
           </button>
+          <div className="relative">
+            <button
+              className={`inline-flex h-9 items-center gap-1 rounded-full px-2 text-sm hover:bg-white/10 ${equalizerOpen ? "text-wave" : "text-zinc-100"}`}
+              onClick={() => setEqualizerOpen((open) => !open)}
+              title="Equalizer presets"
+            >
+              <SlidersHorizontal size={17} />
+              <span className="hidden max-w-16 truncate sm:inline">{equalizerPreset}</span>
+            </button>
+            {equalizerOpen && (
+              <div className="absolute bottom-12 right-0 w-72 rounded-lg border border-line bg-zinc-950 p-4 shadow-2xl">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold">Equalizer</p>
+                    <p className="text-xs text-zinc-500">Preset saved for this browser</p>
+                  </div>
+                  <div className="flex h-10 items-end gap-1">
+                    {selectedPreset.bands.map((band, index) => (
+                      <span
+                        key={`${selectedPreset.name}-${index}`}
+                        className="w-1.5 rounded-full bg-wave"
+                        style={{ height: `${Math.max(10, band / 2)}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  {equalizerPresets.map((preset) => (
+                    <button
+                      key={preset.name}
+                      className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold ${
+                        preset.name === equalizerPreset
+                          ? "bg-wave text-black"
+                          : "bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+                      }`}
+                      onClick={() => selectEqualizerPreset(preset.name)}
+                    >
+                      {preset.name}
+                      <span className="flex items-end gap-0.5">
+                        {preset.bands.map((band, index) => (
+                          <span
+                            key={`${preset.name}-mini-${index}`}
+                            className={`w-1 rounded-full ${preset.name === equalizerPreset ? "bg-black" : "bg-zinc-500"}`}
+                            style={{ height: `${Math.max(4, band / 7)}px` }}
+                          />
+                        ))}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <Volume2 size={17} className="hidden text-zinc-400 sm:block" />
           <input
             aria-label="Volume"
