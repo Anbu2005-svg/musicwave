@@ -1,8 +1,7 @@
 import axios from "axios";
 import type { MusicVideo, OnlinePlaylist, Playlist, StoredSong, User } from "../types";
 
-const baseURL =
-  import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.PROD ? "/api" : "http://localhost:4000/api");
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/api";
 
 export const api = axios.create({ baseURL });
 
