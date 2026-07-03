@@ -1,5 +1,6 @@
 import { FileInput, Globe2, Heart, Home, Library, ListMusic, Plus, Radio, Search, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import EqualizerPanel from "./EqualizerPanel";
 
 const primaryLinks = [
   { to: "/", label: "Home", icon: Home },
@@ -116,9 +117,7 @@ export default function Sidebar({ open, onClose, onPreferences }: Props) {
           </button>
         </nav>
         </div>
-        <div className="rounded-lg border border-line bg-zinc-950 p-4 text-sm leading-6 text-zinc-400">
-          Playback uses the official visible YouTube IFrame Player. No downloads, proxies, or audio extraction.
-        </div>
+        <EqualizerPanel />
       </aside>
     </>
   );
