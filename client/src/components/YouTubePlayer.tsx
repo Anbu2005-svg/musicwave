@@ -32,6 +32,7 @@ export default function YouTubePlayer() {
   const current = usePlayerStore((state) => state.current);
   const isPlaying = usePlayerStore((state) => state.isPlaying);
   const volume = usePlayerStore((state) => state.volume);
+  const playbackQuality = usePlayerStore((state) => state.playbackQuality);
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const setPlaybackTime = usePlayerStore((state) => state.setPlaybackTime);
   const repeatCurrent = usePlayerStore((state) => state.repeatCurrent);
@@ -62,7 +63,7 @@ export default function YouTubePlayer() {
         },
         events: {
           onReady: (event: any) => {
-            event.target?.setPlaybackQuality?.("small");
+            event.target?.setPlaybackQuality?.(playbackQuality);
             setReady(true);
             if (isPlayingRef.current) {
               event.target?.playVideo?.();
@@ -96,11 +97,17 @@ export default function YouTubePlayer() {
 
   useEffect(() => {
     if (!ready || !current || !playerRef.current?.loadVideoById) return;
-    playerRef.current.loadVideoById({ videoId: current.videoId, suggestedQuality: "small" });
+    playerRef.current.loadVideoById({ videoId: current.videoId, suggestedQuality: playbackQuality });
     if (isPlaying) {
       window.setTimeout(() => playerRef.current?.playVideo?.(), 150);
     }
   }, [current, isPlaying, ready]);
+
+  useEffect(() => {
+    if (ready) {
+      playerRef.current?.setPlaybackQuality?.(playbackQuality);
+    }
+  }, [playbackQuality, ready]);
 
   useEffect(() => {
     if (!current || !("mediaSession" in navigator)) return;

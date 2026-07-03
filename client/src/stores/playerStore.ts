@@ -1,12 +1,15 @@
 import { create } from "zustand";
 import type { MusicVideo } from "../types";
 
+export type PlaybackQuality = "small" | "medium" | "large" | "hd720" | "default";
+
 type PlayerState = {
   current: MusicVideo | null;
   queue: MusicVideo[];
   history: MusicVideo[];
   isPlaying: boolean;
   volume: number;
+  playbackQuality: PlaybackQuality;
   skipSeconds: number;
   currentTime: number;
   duration: number;
@@ -31,6 +34,7 @@ type PlayerState = {
   seekBy: (seconds: number) => void;
   seekTo: (seconds: number) => void;
   setPlaybackTime: (currentTime: number, duration: number) => void;
+  setPlaybackQuality: (quality: PlaybackQuality) => void;
   setSkipSeconds: (seconds: number) => void;
   setVolume: (volume: number) => void;
   setQueueOpen: (open: boolean) => void;
@@ -42,6 +46,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   history: [],
   isPlaying: false,
   volume: 70,
+  playbackQuality: (localStorage.getItem("musicwave_playback_quality") as PlaybackQuality | null) ?? "small",
   skipSeconds: 10,
   currentTime: 0,
   duration: 0,
@@ -135,6 +140,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       seekRequest: { id: (state.seekRequest?.id ?? 0) + 1, seconds, absolute: true }
     })),
   setPlaybackTime: (currentTime, duration) => set({ currentTime, duration }),
+  setPlaybackQuality: (playbackQuality) => {
+    localStorage.setItem("musicwave_playback_quality", playbackQuality);
+    set({ playbackQuality });
+  },
   setSkipSeconds: (seconds) => set({ skipSeconds: Math.min(120, Math.max(5, seconds)) }),
   setVolume: (volume) => set({ volume }),
   setQueueOpen: (queueOpen) => set({ queueOpen })
