@@ -62,6 +62,19 @@ export default function PlaylistDetailsPage() {
           <h1 className="mt-2 truncate text-4xl font-black">{playlist.data.name}</h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-400">{playlist.data.description || "No description"}</p>
           <p className="mt-3 text-sm text-zinc-500">{songs.length} songs</p>
+          <button
+            className="mt-5 inline-flex h-12 items-center gap-3 rounded-full bg-wave px-6 text-base font-black text-black shadow-glow transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              const [firstSong, ...queue] = songs;
+              if (!firstSong) return;
+              playTrack(firstSong, queue);
+            }}
+            disabled={!songs.length}
+            title="Play playlist"
+          >
+            <Play size={20} fill="currentColor" className="ml-0.5" />
+            Play
+          </button>
         </div>
         <div className="flex gap-2">
           <button

@@ -28,7 +28,7 @@ export default function Sidebar({ open, onClose, onPreferences }: Props) {
         onClick={onClose}
       />
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col gap-3 bg-black p-3 transition-transform lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 flex h-dvh w-72 flex-col gap-3 overflow-y-auto bg-black p-3 transition-transform lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -72,7 +72,7 @@ export default function Sidebar({ open, onClose, onPreferences }: Props) {
           </nav>
         </div>
 
-        <div className="min-h-0 flex-1 rounded-lg bg-zinc-950 p-3">
+        <div className="rounded-lg bg-zinc-950 p-3">
           <div className="mb-2 flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-3 text-sm font-bold text-zinc-300">
               <ListMusic size={20} />
