@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Trash2 } from "lucide-react";
+import { Edit3, Play, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CreatePlaylistModal from "../components/CreatePlaylistModal";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import SongRow from "../components/SongRow";
 import { getErrorMessage, playlistsApi } from "../services/api";
+import { usePlayerStore } from "../stores/playerStore";
 import { useToastStore } from "../stores/toastStore";
 
 export default function PlaylistDetailsPage() {
@@ -14,6 +15,7 @@ export default function PlaylistDetailsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const showToast = useToastStore((state) => state.showToast);
+  const playTrack = usePlayerStore((state) => state.playTrack);
   const playlist = useQuery({ queryKey: ["playlist", id], queryFn: () => playlistsApi.get(id), enabled: !!id });
   const updateMutation = useMutation({
     mutationFn: (input: { name: string; description?: string }) => playlistsApi.update(id, input),
@@ -62,6 +64,18 @@ export default function PlaylistDetailsPage() {
           <p className="mt-3 text-sm text-zinc-500">{songs.length} songs</p>
         </div>
         <div className="flex gap-2">
+          <button
+            className="grid h-11 w-11 place-items-center rounded-full bg-wave text-black shadow-glow transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={() => {
+              const [firstSong, ...queue] = songs;
+              if (!firstSong) return;
+              playTrack(firstSong, queue);
+            }}
+            disabled={!songs.length}
+            title="Play playlist"
+          >
+            <Play size={19} fill="currentColor" className="ml-0.5" />
+          </button>
           <button className="grid h-11 w-11 place-items-center rounded-lg bg-zinc-900 hover:bg-zinc-800" onClick={() => setEditOpen(true)} title="Edit playlist">
             <Edit3 size={18} />
           </button>
