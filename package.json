@@ -11,7 +11,6 @@
     "dev:server": "npm run dev -w server",
     "build": "npm run build:client && npm run prisma:generate && npm run build:server",
     "start": "npm run start -w server",
-    "render:build": "npm install --include=dev && npm run build",
     "build:client": "npm run build -w client",
     "build:server": "npm run build -w server",
     "prisma:generate": "npm run prisma:generate -w server",
