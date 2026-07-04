@@ -6,11 +6,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
+router.use(requireAuth);
 router.get("/search", searchLimiter, asyncHandler(search));
 router.get("/trending", searchLimiter, asyncHandler(trending));
-router.get("/preferred", requireAuth, searchLimiter, asyncHandler(preferred));
-router.get("/preferred-playlists", requireAuth, searchLimiter, asyncHandler(preferredPlaylists));
-router.get("/playlists/:playlistId/songs", requireAuth, searchLimiter, asyncHandler(playlistSongs));
+router.get("/preferred", searchLimiter, asyncHandler(preferred));
+router.get("/preferred-playlists", searchLimiter, asyncHandler(preferredPlaylists));
+router.get("/playlists/:playlistId/songs", searchLimiter, asyncHandler(playlistSongs));
 router.get("/details/:videoId", searchLimiter, asyncHandler(details));
 
 export default router;

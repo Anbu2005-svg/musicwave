@@ -6,6 +6,8 @@ import { prisma } from "../utils/prisma.js";
 import { languagePreferencesSchema, loginSchema } from "../validators/auth.validators.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
+const dummyPasswordHash = "$2a$12$CwTycUXWue0Thq9StjUM0uJ8mF95j4p/PjBn0EyG5TVtGfDW/L7uO";
+
 function publicUser(user: {
   id: string;
   name: string;
@@ -27,13 +29,9 @@ function publicUser(user: {
 export async function login(req: Request, res: Response) {
   const input = loginSchema.parse(req.body);
   const user = await prisma.user.findUnique({ where: { email: input.email } });
+  const validPassword = await bcrypt.compare(input.password, user?.passwordHash ?? dummyPasswordHash);
 
-  if (!user) {
-    throw new ApiError(401, "Invalid email or password");
-  }
-
-  const validPassword = await bcrypt.compare(input.password, user.passwordHash);
-  if (!validPassword) {
+  if (!user || !validPassword) {
     throw new ApiError(401, "Invalid email or password");
   }
 

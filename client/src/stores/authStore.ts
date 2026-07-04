@@ -9,8 +9,18 @@ type AuthState = {
   logout: () => void;
 };
 
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("musicwave_user") ?? "null") as User | null;
+  } catch {
+    localStorage.removeItem("musicwave_user");
+    localStorage.removeItem("musicwave_token");
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: JSON.parse(localStorage.getItem("musicwave_user") ?? "null") as User | null,
+  user: getStoredUser(),
   token: localStorage.getItem("musicwave_token"),
   setSession: (user, token) => {
     localStorage.setItem("musicwave_token", token);

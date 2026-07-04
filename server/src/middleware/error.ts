@@ -3,7 +3,8 @@ import { ZodError } from "zod";
 import { ApiError } from "../utils/ApiError.js";
 
 export function notFoundHandler(req: Request, _res: Response, next: NextFunction) {
-  next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
+  const isApiRoute = req.originalUrl.startsWith("/api");
+  next(new ApiError(404, isApiRoute ? "API route not found" : "Route not found"));
 }
 
 export function errorHandler(error: unknown, _req: Request, res: Response, _next: NextFunction) {

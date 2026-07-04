@@ -3,6 +3,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { getPlaylistSongs, getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
+const youtubeVideoIdPattern = /^[a-zA-Z0-9_-]{11}$/;
+const youtubePlaylistIdPattern = /^[a-zA-Z0-9_-]{10,80}$/;
+
 const playlistDiscoveryCategories = [
   { label: "Latest", query: (language: string) => `${language} latest songs playlist 2026 new releases` },
   { label: "New Songs", query: (language: string) => `${language} new songs playlist 2025 2026` },
@@ -20,6 +23,9 @@ export async function search(req: Request, res: Response) {
   const q = String(req.query.q ?? "").trim();
   if (!q) {
     throw new ApiError(400, "Search query is required");
+  }
+  if (q.length > 100) {
+    throw new ApiError(400, "Search query is too long");
   }
 
   const results = await searchMusic(q);
@@ -72,7 +78,7 @@ export async function preferredPlaylists(req: AuthRequest, res: Response) {
 
 export async function playlistSongs(req: Request, res: Response) {
   const playlistId = String(req.params.playlistId ?? "").trim();
-  if (!/^[a-zA-Z0-9_-]{10,80}$/.test(playlistId)) {
+  if (!youtubePlaylistIdPattern.test(playlistId)) {
     throw new ApiError(400, "Valid playlist ID is required");
   }
 
@@ -81,6 +87,11 @@ export async function playlistSongs(req: Request, res: Response) {
 }
 
 export async function details(req: Request, res: Response) {
-  const result = await getVideoDetails(req.params.videoId);
+  const videoId = String(req.params.videoId ?? "").trim();
+  if (!youtubeVideoIdPattern.test(videoId)) {
+    throw new ApiError(400, "Valid video ID is required");
+  }
+
+  const result = await getVideoDetails(videoId);
   res.json({ result });
 }

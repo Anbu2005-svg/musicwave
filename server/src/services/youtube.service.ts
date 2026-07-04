@@ -106,10 +106,16 @@ function mapPlaylistItem(item: any, language: string, category?: string): Online
 
 function handleYoutubeError(error: unknown): never {
   if (axios.isAxiosError(error)) {
-    const message =
-      (error.response?.data as any)?.error?.message ??
-      "YouTube API request failed. Check quota, key restrictions, and API status.";
-    throw new ApiError(error.response?.status ?? 502, message);
+    const status = error.response?.status;
+    if (status === 403 || status === 429) {
+      throw new ApiError(503, "YouTube service is temporarily unavailable");
+    }
+
+    if (status === 404) {
+      throw new ApiError(404, "Requested YouTube content was not found");
+    }
+
+    throw new ApiError(502, "YouTube API request failed");
   }
 
   throw error;

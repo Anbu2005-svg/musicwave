@@ -32,6 +32,10 @@ export async function requireAuth(req: AuthRequest, _res: Response, next: NextFu
       throw new ApiError(401, "Invalid authentication token");
     }
 
+    if (!user.emailVerifiedAt) {
+      throw new ApiError(403, "Verify your email before continuing");
+    }
+
     req.user = user;
     next();
   } catch (error) {

@@ -2,25 +2,45 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { errorHandler, notFoundHandler } from "./middleware/error.js";
+import { apiLimiter } from "./middleware/rateLimit.js";
 import authRoutes from "./routes/auth.routes.js";
 import likedRoutes from "./routes/liked.routes.js";
 import musicRoutes from "./routes/music.routes.js";
 import playlistRoutes from "./routes/playlists.routes.js";
 import recommendationsRoutes from "./routes/recommendations.routes.js";
+import { ApiError } from "./utils/ApiError.js";
+
+function allowedOrigins() {
+  return new Set(
+    (process.env.CLIENT_URL ?? "http://localhost:5173")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  );
+}
 
 export function createApp() {
   const app = express();
-  const clientUrl = process.env.CLIENT_URL ?? "http://localhost:5173";
+  const origins = allowedOrigins();
 
+  app.set("trust proxy", 1);
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(
     cors({
-      origin: clientUrl,
-      credentials: true
+      origin(origin, callback) {
+        if (!origin || origins.has(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new ApiError(403, "Origin not allowed"));
+      },
+      credentials: false
     })
   );
   app.use(express.json({ limit: "1mb" }));
+  app.use("/api", apiLimiter);
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", service: "musicwave-api" });
