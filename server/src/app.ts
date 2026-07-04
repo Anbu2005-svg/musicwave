@@ -12,8 +12,17 @@ import { ApiError } from "./utils/ApiError.js";
 
 function allowedOrigins() {
   return new Set(
-    (process.env.CLIENT_URL ?? "http://localhost:5173")
-      .split(",")
+    [
+      process.env.CLIENT_URL,
+      process.env.CLIENT_URLS,
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "https://localhost",
+      "capacitor://localhost",
+      "ionic://localhost"
+    ]
+      .filter(Boolean)
+      .flatMap((origin) => origin!.split(","))
       .map((origin) => origin.trim())
       .filter(Boolean)
   );
@@ -22,6 +31,8 @@ function allowedOrigins() {
 export function createApp() {
   const app = express();
   const origins = allowedOrigins();
+
+  console.log(`Allowed CORS origins: ${[...origins].join(", ")}`);
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
