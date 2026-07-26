@@ -25,6 +25,10 @@ export const authApi = {
     const { data } = await api.post<{ user: User; token: string }>("/auth/login", input);
     return data;
   },
+  async signup(input: { name: string; email: string; password: string }) {
+    const { data } = await api.post<{ user: User; token: string }>("/auth/signup", input);
+    return data;
+  },
   async me() {
     const { data } = await api.get<{ user: User }>("/auth/me");
     return data.user;

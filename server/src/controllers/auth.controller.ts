@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
 import { signToken } from "../utils/jwt.js";
 import { prisma } from "../utils/prisma.js";
-import { languagePreferencesSchema, loginSchema } from "../validators/auth.validators.js";
+import { languagePreferencesSchema, loginSchema, signupSchema } from "../validators/auth.validators.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
 const dummyPasswordHash = "$2a$12$CwTycUXWue0Thq9StjUM0uJ8mF95j4p/PjBn0EyG5TVtGfDW/L7uO";
@@ -24,6 +24,27 @@ function publicUser(user: {
     languagePreferences: user.languagePreferences ?? [],
     createdAt: user.createdAt
   };
+}
+
+export async function signup(req: Request, res: Response) {
+  const input = signupSchema.parse(req.body);
+  const existing = await prisma.user.findUnique({ where: { email: input.email } });
+  if (existing) {
+    throw new ApiError(400, "An account with this email already exists");
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  const user = await prisma.user.create({
+    data: {
+      name: input.name,
+      email: input.email,
+      passwordHash,
+      emailVerifiedAt: new Date(),
+      languagePreferences: ["English"]
+    }
+  });
+
+  res.status(201).json({ user: publicUser(user), token: signToken(user.id) });
 }
 
 export async function login(req: Request, res: Response) {
