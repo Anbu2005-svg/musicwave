@@ -45,9 +45,36 @@ export default function YouTubePlayer() {
   const next = usePlayerStore((state) => state.next);
   const previous = usePlayerStore((state) => state.previous);
 
+  const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
+    if (isPlaying && current) {
+      if (!silentAudioRef.current) {
+        const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+        audio.loop = true;
+        silentAudioRef.current = audio;
+      }
+      silentAudioRef.current.play().catch(() => undefined);
+    } else if (silentAudioRef.current) {
+      silentAudioRef.current.pause();
+    }
+  }, [isPlaying, current]);
+
+  useEffect(() => {
+    const handleVisibilityOrFocusChange = () => {
+      if (isPlayingRef.current && playerRef.current?.playVideo) {
+        playerRef.current.playVideo();
+      }
+    };
+
+    window.addEventListener("focus", handleVisibilityOrFocusChange);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocusChange);
+    return () => {
+      window.removeEventListener("focus", handleVisibilityOrFocusChange);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocusChange);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -77,7 +104,9 @@ export default function YouTubePlayer() {
           onStateChange: (event: any) => {
             if (
               isPlayingRef.current &&
-              (event.data === window.YT.PlayerState.CUED || event.data === window.YT.PlayerState.PAUSED)
+              (event.data === window.YT.PlayerState.CUED ||
+               event.data === window.YT.PlayerState.PAUSED ||
+               event.data === -1)
             ) {
               event.target?.playVideo?.();
               return;

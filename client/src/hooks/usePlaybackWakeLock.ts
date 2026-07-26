@@ -30,7 +30,7 @@ export function usePlaybackWakeLock() {
     };
 
     const requestWakeLock = async () => {
-      if (!current || !isPlaying || document.visibilityState !== "visible") {
+      if (!current || !isPlaying) {
         await releaseWakeLock();
         return;
       }
