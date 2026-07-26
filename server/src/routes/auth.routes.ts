@@ -8,6 +8,7 @@ const router = Router();
 
 router.post("/login", authLimiter, asyncHandler(login));
 router.post("/signup", authLimiter, asyncHandler(signup));
+router.post("/register", authLimiter, asyncHandler(signup));
 router.get("/me", requireAuth, asyncHandler(me));
 router.put("/preferences", requireAuth, asyncHandler(updatePreferences));
 
