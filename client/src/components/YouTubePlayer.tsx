@@ -47,20 +47,61 @@ export default function YouTubePlayer() {
 
   const silentAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Unified: silent audio keepalive + MediaSession notification
   useEffect(() => {
     isPlayingRef.current = isPlaying;
+
+    // Create or reuse a persistent silent audio element.
+    // Android surfaces a media notification only when an <audio> element is
+    // actively playing AND navigator.mediaSession.metadata is set.
+    if (!silentAudioRef.current) {
+      const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+      audio.loop = true;
+      silentAudioRef.current = audio;
+    }
+
     if (isPlaying && current) {
-      if (!silentAudioRef.current) {
-        const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-        audio.loop = true;
-        silentAudioRef.current = audio;
-      }
       silentAudioRef.current.play().catch(() => undefined);
-    } else if (silentAudioRef.current) {
+    } else {
       silentAudioRef.current.pause();
     }
-  }, [isPlaying, current]);
 
+    // MediaSession – drives Android's notification panel controls & info
+    if (!current || !("mediaSession" in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.title ?? "MusicWave",
+      artist: current.channelTitle ?? "Unknown Artist",
+      album: "MusicWave",
+      artwork: current.thumbnail
+        ? [
+            { src: current.thumbnail, sizes: "96x96", type: "image/jpeg" },
+            { src: current.thumbnail, sizes: "128x128", type: "image/jpeg" },
+            { src: current.thumbnail, sizes: "192x192", type: "image/jpeg" },
+            { src: current.thumbnail, sizes: "256x256", type: "image/jpeg" },
+            { src: current.thumbnail, sizes: "384x384", type: "image/jpeg" },
+            { src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }
+          ]
+        : []
+    });
+
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+
+    navigator.mediaSession.setActionHandler("play", () => {
+      usePlayerStore.setState({ isPlaying: true });
+      silentAudioRef.current?.play().catch(() => undefined);
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      pause();
+      silentAudioRef.current?.pause();
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", previous);
+    navigator.mediaSession.setActionHandler("nexttrack", next);
+    navigator.mediaSession.setActionHandler("seekbackward", () => seekBy(-10));
+    navigator.mediaSession.setActionHandler("seekforward", () => seekBy(10));
+  }, [isPlaying, current, next, pause, previous, seekBy]);
+
+  // Auto-resume YouTube playback when app regains focus or visibility
   useEffect(() => {
     const handleVisibilityOrFocusChange = () => {
       if (isPlayingRef.current && playerRef.current?.playVideo) {
@@ -76,6 +117,7 @@ export default function YouTubePlayer() {
     };
   }, []);
 
+  // Initialize YouTube IFrame player
   useEffect(() => {
     let mounted = true;
     loadYouTubeApi().then(() => {
@@ -129,6 +171,7 @@ export default function YouTubePlayer() {
     };
   }, [current?.videoId, next, repeatCurrent]);
 
+  // Load video when current song changes
   useEffect(() => {
     if (!ready || !current || !playerRef.current?.loadVideoById) return;
     playerRef.current.loadVideoById({ videoId: current.videoId, suggestedQuality: playbackQuality });
@@ -137,34 +180,14 @@ export default function YouTubePlayer() {
     }
   }, [current, isPlaying, ready]);
 
+  // Apply playback quality changes
   useEffect(() => {
     if (ready) {
       playerRef.current?.setPlaybackQuality?.(playbackQuality);
     }
   }, [playbackQuality, ready]);
 
-  useEffect(() => {
-    if (!current || !("mediaSession" in navigator)) return;
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: current.title,
-      artist: current.channelTitle,
-      artwork: current.thumbnail ? [{ src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }] : []
-    });
-    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
-
-    navigator.mediaSession.setActionHandler("play", () => {
-      usePlayerStore.setState({ isPlaying: true });
-    });
-    navigator.mediaSession.setActionHandler("pause", () => {
-      pause();
-    });
-    navigator.mediaSession.setActionHandler("previoustrack", previous);
-    navigator.mediaSession.setActionHandler("nexttrack", next);
-    navigator.mediaSession.setActionHandler("seekbackward", () => seekBy(-10));
-    navigator.mediaSession.setActionHandler("seekforward", () => seekBy(10));
-  }, [current, isPlaying, next, pause, previous, seekBy]);
-
+  // Toggle play/pause on the YouTube player
   useEffect(() => {
     if (!ready || !playerRef.current) return;
     if (isPlaying) {
