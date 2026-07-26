@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { authApi } from "./services/api";
@@ -22,7 +23,14 @@ export default function App() {
 
   useEffect(() => {
     if (!token) return;
-    authApi.me().then(setUser).catch(logout);
+    authApi
+      .me()
+      .then(setUser)
+      .catch((error) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          logout();
+        }
+      });
   }, [token, setUser, logout]);
 
   return (

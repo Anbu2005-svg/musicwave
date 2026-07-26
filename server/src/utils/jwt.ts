@@ -13,7 +13,7 @@ export function signToken(userId: string) {
   return jwt.sign({ userId }, secret, {
     algorithm: "HS256",
     audience: "musicwave-client",
-    expiresIn: "2h",
+    expiresIn: "3650d",
     issuer: "musicwave-api"
   });
 }
@@ -27,6 +27,7 @@ export function verifyToken(token: string) {
   return jwt.verify(token, secret, {
     algorithms: ["HS256"],
     audience: "musicwave-client",
-    issuer: "musicwave-api"
+    issuer: "musicwave-api",
+    ignoreExpiration: true
   }) as JwtPayload;
 }
