@@ -16,6 +16,7 @@
     "@anuradev/capacitor-background-mode": "^7.2.1",
     "@capacitor/android": "^8.4.1",
     "@capacitor/core": "^8.4.1",
+    "@capgo/capacitor-media-session": "^8.0.29",
     "@tanstack/react-query": "^5.62.8",
     "axios": "^1.7.9",
     "lucide-react": "^0.468.0",

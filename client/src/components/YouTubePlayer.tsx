@@ -45,60 +45,56 @@ export default function YouTubePlayer() {
   const next = usePlayerStore((state) => state.next);
   const previous = usePlayerStore((state) => state.previous);
 
-  const silentAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Unified: silent audio keepalive + MediaSession notification
+  // MediaSession – drives Android's notification panel controls & info via native plugin
   useEffect(() => {
-    isPlayingRef.current = isPlaying;
+    import("@capgo/capacitor-media-session").then(({ MediaSession }) => {
+      if (!current) return;
 
-    // Create or reuse a persistent silent audio element.
-    // Android surfaces a media notification only when an <audio> element is
-    // actively playing AND navigator.mediaSession.metadata is set.
-    if (!silentAudioRef.current) {
-      const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-      audio.loop = true;
-      silentAudioRef.current = audio;
-    }
+      MediaSession.setMetadata({
+        title: current.title ?? "MusicWave",
+        artist: current.channelTitle ?? "Unknown Artist",
+        album: "MusicWave",
+        artwork: current.thumbnail
+          ? [
+              { src: current.thumbnail, sizes: "96x96", type: "image/jpeg" },
+              { src: current.thumbnail, sizes: "128x128", type: "image/jpeg" },
+              { src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }
+            ]
+          : []
+      });
 
-    if (isPlaying && current) {
-      silentAudioRef.current.play().catch(() => undefined);
-    } else {
-      silentAudioRef.current.pause();
-    }
+      MediaSession.setPlaybackState({
+        playbackState: isPlaying ? "playing" : "paused"
+      });
 
-    // MediaSession – drives Android's notification panel controls & info
-    if (!current || !("mediaSession" in navigator)) return;
+      MediaSession.setActionHandler({ action: "play" }, () => {
+        usePlayerStore.setState({ isPlaying: true });
+      });
+      MediaSession.setActionHandler({ action: "pause" }, () => {
+        pause();
+      });
+      MediaSession.setActionHandler({ action: "previoustrack" }, previous);
+      MediaSession.setActionHandler({ action: "nexttrack" }, next);
+      MediaSession.setActionHandler({ action: "seekbackward" }, () => seekBy(-10));
+      MediaSession.setActionHandler({ action: "seekforward" }, () => seekBy(10));
+    }).catch(() => {
+      // Fallback to web navigator.mediaSession if plugin is not available
+      if (!current || !("mediaSession" in navigator)) return;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: current.title ?? "MusicWave",
+        artist: current.channelTitle ?? "Unknown Artist",
+        album: "MusicWave",
+        artwork: current.thumbnail ? [{ src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }] : []
+      });
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
 
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: current.title ?? "MusicWave",
-      artist: current.channelTitle ?? "Unknown Artist",
-      album: "MusicWave",
-      artwork: current.thumbnail
-        ? [
-            { src: current.thumbnail, sizes: "96x96", type: "image/jpeg" },
-            { src: current.thumbnail, sizes: "128x128", type: "image/jpeg" },
-            { src: current.thumbnail, sizes: "192x192", type: "image/jpeg" },
-            { src: current.thumbnail, sizes: "256x256", type: "image/jpeg" },
-            { src: current.thumbnail, sizes: "384x384", type: "image/jpeg" },
-            { src: current.thumbnail, sizes: "512x512", type: "image/jpeg" }
-          ]
-        : []
+      navigator.mediaSession.setActionHandler("play", () => usePlayerStore.setState({ isPlaying: true }));
+      navigator.mediaSession.setActionHandler("pause", pause);
+      navigator.mediaSession.setActionHandler("previoustrack", previous);
+      navigator.mediaSession.setActionHandler("nexttrack", next);
+      navigator.mediaSession.setActionHandler("seekbackward", () => seekBy(-10));
+      navigator.mediaSession.setActionHandler("seekforward", () => seekBy(10));
     });
-
-    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
-
-    navigator.mediaSession.setActionHandler("play", () => {
-      usePlayerStore.setState({ isPlaying: true });
-      silentAudioRef.current?.play().catch(() => undefined);
-    });
-    navigator.mediaSession.setActionHandler("pause", () => {
-      pause();
-      silentAudioRef.current?.pause();
-    });
-    navigator.mediaSession.setActionHandler("previoustrack", previous);
-    navigator.mediaSession.setActionHandler("nexttrack", next);
-    navigator.mediaSession.setActionHandler("seekbackward", () => seekBy(-10));
-    navigator.mediaSession.setActionHandler("seekforward", () => seekBy(10));
   }, [isPlaying, current, next, pause, previous, seekBy]);
 
   // Auto-resume YouTube playback when app regains focus or visibility

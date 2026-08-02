@@ -52,10 +52,10 @@ export function useBackgroundMode() {
           channelName: "MusicWave Playback",
           channelDescription: "Keeps MusicWave playback active",
           disableWebViewOptimization: true,
-          hidden: false,
+          hidden: true,
           resume: true,
-          silent: false,
-          visibility: "public"
+          silent: true,
+          visibility: "secret"
         });
       })
       .catch(() => {
