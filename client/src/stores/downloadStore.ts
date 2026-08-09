@@ -164,9 +164,24 @@ export const useDownloadStore = create<DownloadState>((setStore, getStore) => ({
 
       showToast(`Downloaded "${song.title.slice(0, 25)}"`, "success");
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Download failed:", err);
-      showToast(`Failed to download "${song.title.slice(0, 25)}"`, "error");
+      let errorMsg = "Download failed";
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed?.message) errorMsg = parsed.message;
+        } catch {
+          // ignore
+        }
+      } else if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+
+      showToast(`${errorMsg}: "${song.title.slice(0, 20)}"`, "error");
 
       const finishDownloading = new Set(getStore().downloadingIds);
       finishDownloading.delete(song.videoId);

@@ -15,6 +15,7 @@ function allowedOrigins() {
     [
       process.env.CLIENT_URL,
       process.env.CLIENT_URLS,
+      "http://localhost",
       "http://localhost:5173",
       "http://127.0.0.1:5173",
       "https://localhost",
@@ -36,17 +37,25 @@ export function createApp() {
 
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || origins.has(origin)) {
+        if (
+          !origin ||
+          origins.has(origin) ||
+          origin.startsWith("http://localhost") ||
+          origin.startsWith("https://localhost") ||
+          origin.startsWith("capacitor://") ||
+          origin.startsWith("ionic://")
+        ) {
           callback(null, true);
           return;
         }
 
         callback(new ApiError(403, "Origin not allowed"));
       },
+      exposedHeaders: ["Content-Disposition", "Content-Length"],
       credentials: false
     })
   );
