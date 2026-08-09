@@ -277,20 +277,30 @@ export async function getAudioStreamUrl(videoId: string): Promise<string> {
     const { ensureYtDlp } = await import("../utils/setup-ytdlp.js");
     const binPath = await ensureYtDlp();
 
-    const youtubedlModule = await import("youtube-dl-exec");
-    // youtube-dl-exec exports a create() function to use a custom binary path
-    const youtubedl = (youtubedlModule.create || youtubedlModule.default?.create || (youtubedlModule as any).create)(binPath);
+    const { execFile } = await import("child_process");
 
-    const url = await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
-      getUrl: true,
-      format: "bestaudio/best"
+    return new Promise((resolve, reject) => {
+      execFile(
+        binPath,
+        [`https://www.youtube.com/watch?v=${videoId}`, "-g", "-f", "bestaudio/best"],
+        { timeout: 30000 },
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error("yt-dlp exec error:", error, stderr);
+            return reject(new ApiError(500, "Could not extract audio stream from YouTube"));
+          }
+          const url = stdout.trim().split("\n")[0]?.trim();
+          if (!url || !url.startsWith("http")) {
+            console.error("yt-dlp returned invalid url:", stdout);
+            return reject(new ApiError(500, "Could not extract valid audio stream URL"));
+          }
+          resolve(url);
+        }
+      );
     });
-    if (!url || typeof url !== "string") {
-      throw new ApiError(500, "Could not extract audio stream");
-    }
-    return (url as string).trim();
   } catch (error) {
     if (error instanceof ApiError) throw error;
+    console.error("getAudioStreamUrl error:", error);
     throw new ApiError(500, "Failed to get song download stream");
   }
 }

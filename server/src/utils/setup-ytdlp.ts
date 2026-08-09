@@ -31,11 +31,23 @@ export async function ensureYtDlp() {
   const url = `https://github.com/yt-dlp/yt-dlp/releases/latest/download/${binaryName}`;
 
   try {
-    const res = await axios.get(url, { responseType: "stream" });
+    const res = await axios.get(url, {
+      responseType: "stream",
+      maxRedirects: 10,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+      }
+    });
     await pipeline(res.data, fs.createWriteStream(binPath));
 
     if (platform !== "win32") {
       fs.chmodSync(binPath, "755");
+    }
+
+    const stat = fs.statSync(binPath);
+    if (stat.size < 1000000) {
+      fs.unlinkSync(binPath);
+      throw new Error(`Downloaded binary is too small (${stat.size} bytes). Download may have been truncated.`);
     }
 
     console.log("yt-dlp downloaded successfully!");
@@ -46,6 +58,9 @@ export async function ensureYtDlp() {
 
     return binPath;
   } catch (err) {
+    if (fs.existsSync(binPath)) {
+      try { fs.unlinkSync(binPath); } catch {}
+    }
     console.error("Failed to download yt-dlp:", err);
     throw err;
   }
