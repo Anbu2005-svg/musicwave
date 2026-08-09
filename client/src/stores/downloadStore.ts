@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { Directory, Filesystem } from "@capacitor/filesystem";
+
 import { del, get, set } from "idb-keyval";
 import { create } from "zustand";
 import { api } from "../services/api";
@@ -43,18 +43,6 @@ function saveMetadata(songs: DownloadedTrack[]) {
   }
 }
 
-async function convertBlobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(",")[1] ?? "";
-      resolve(base64);
-    };
-    reader.readAsDataURL(blob);
-  });
-}
 
 export const useDownloadStore = create<DownloadState>((setStore, getStore) => ({
   downloadedSongs: loadSavedMetadata(),
@@ -113,22 +101,8 @@ export const useDownloadStore = create<DownloadState>((setStore, getStore) => ({
       const safeTitle = song.title.replace(/[/\\?%*:|"<>]/g, "_").trim() || "song";
       const filename = `${safeTitle}.mp3`;
 
-      // 3. On Native Capacitor Android, also save to phone's Documents/MusicWave folder
-      if (Capacitor.isNativePlatform()) {
-        try {
-          const base64Data = await convertBlobToBase64(blob);
-          const savedFile = await Filesystem.writeFile({
-            path: `MusicWave/${filename}`,
-            data: base64Data,
-            directory: Directory.Documents,
-            recursive: true
-          });
-          localPath = savedFile.uri;
-        } catch (fsErr) {
-          console.warn("Could not write file to device storage:", fsErr);
-        }
-      } else {
-        // 4. On Web browser, trigger standard file download element
+      // 3. On Web browser, trigger standard file download element
+      if (!Capacitor.isNativePlatform()) {
         try {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
@@ -220,18 +194,6 @@ export const useDownloadStore = create<DownloadState>((setStore, getStore) => ({
       // Delete from IndexedDB
       await del(`mw_audio_${videoId}`);
 
-      // If native file exists, delete from filesystem
-      if (Capacitor.isNativePlatform() && track?.localPath) {
-        try {
-          const safeTitle = (track.title || "song").replace(/[/\\?%*:|"<>]/g, "_").trim();
-          await Filesystem.deleteFile({
-            path: `MusicWave/${safeTitle}.mp3`,
-            directory: Directory.Documents
-          });
-        } catch {
-          // ignore
-        }
-      }
 
       const updated = downloadedSongs.filter((s) => s.videoId !== videoId);
       saveMetadata(updated);
