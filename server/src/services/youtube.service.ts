@@ -274,8 +274,13 @@ export async function getVideoDetails(videoId: string) {
 
 export async function getAudioStreamUrl(videoId: string): Promise<string> {
   try {
+    const { ensureYtDlp } = await import("../utils/setup-ytdlp.js");
+    const binPath = await ensureYtDlp();
+
     const youtubedlModule = await import("youtube-dl-exec");
-    const youtubedl = (youtubedlModule.default || youtubedlModule.exec || youtubedlModule) as any;
+    // youtube-dl-exec exports a create() function to use a custom binary path
+    const youtubedl = (youtubedlModule.create || youtubedlModule.default?.create || (youtubedlModule as any).create)(binPath);
+
     const url = await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
       getUrl: true,
       format: "bestaudio/best"
@@ -283,7 +288,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<string> {
     if (!url || typeof url !== "string") {
       throw new ApiError(500, "Could not extract audio stream");
     }
-    return url.trim();
+    return (url as string).trim();
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, "Failed to get song download stream");
