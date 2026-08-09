@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Play, Trash2 } from "lucide-react";
+import { Download, Edit3, Play, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import CreatePlaylistModal from "../components/CreatePlaylistModal";
@@ -8,6 +8,7 @@ import SongRow from "../components/SongRow";
 import { getErrorMessage, playlistsApi } from "../services/api";
 import { usePlayerStore } from "../stores/playerStore";
 import { useToastStore } from "../stores/toastStore";
+import { downloadPlaylist } from "../utils/download";
 
 export default function PlaylistDetailsPage() {
   const { id = "" } = useParams();
@@ -62,33 +63,32 @@ export default function PlaylistDetailsPage() {
           <h1 className="mt-2 truncate text-4xl font-black">{playlist.data.name}</h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-400">{playlist.data.description || "No description"}</p>
           <p className="mt-3 text-sm text-zinc-500">{songs.length} songs</p>
-          <button
-            className="mt-5 inline-flex h-12 items-center gap-3 rounded-full bg-wave px-6 text-base font-black text-black shadow-glow transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => {
-              const [firstSong, ...queue] = songs;
-              if (!firstSong) return;
-              playTrack(firstSong, queue);
-            }}
-            disabled={!songs.length}
-            title="Play playlist"
-          >
-            <Play size={20} fill="currentColor" className="ml-0.5" />
-            Play
-          </button>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              className="inline-flex h-12 items-center gap-3 rounded-full bg-wave px-6 text-base font-black text-black shadow-glow transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => {
+                const [firstSong, ...queue] = songs;
+                if (!firstSong) return;
+                playTrack(firstSong, queue);
+              }}
+              disabled={!songs.length}
+              title="Play playlist"
+            >
+              <Play size={20} fill="currentColor" className="ml-0.5" />
+              Play
+            </button>
+            <button
+              className="inline-flex h-12 items-center gap-2 rounded-full border border-white/10 bg-zinc-900 px-6 text-base font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={() => downloadPlaylist(songs, playlist.data.name)}
+              disabled={!songs.length}
+              title="Download all songs in playlist"
+            >
+              <Download size={19} />
+              Download Playlist
+            </button>
+          </div>
         </div>
         <div className="flex gap-2">
-          <button
-            className="grid h-11 w-11 place-items-center rounded-full bg-wave text-black shadow-glow transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
-            onClick={() => {
-              const [firstSong, ...queue] = songs;
-              if (!firstSong) return;
-              playTrack(firstSong, queue);
-            }}
-            disabled={!songs.length}
-            title="Play playlist"
-          >
-            <Play size={19} fill="currentColor" className="ml-0.5" />
-          </button>
           <button className="grid h-11 w-11 place-items-center rounded-lg bg-zinc-900 hover:bg-zinc-800" onClick={() => setEditOpen(true)} title="Edit playlist">
             <Edit3 size={18} />
           </button>

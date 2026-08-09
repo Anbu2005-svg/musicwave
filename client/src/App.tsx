@@ -11,6 +11,7 @@ import SearchPage from "./pages/SearchPage";
 import LibraryPage from "./pages/LibraryPage";
 import PlaylistDetailsPage from "./pages/PlaylistDetailsPage";
 import LikedSongsPage from "./pages/LikedSongsPage";
+import DownloadsPage from "./pages/DownloadsPage";
 import OnlinePlaylistsPage from "./pages/OnlinePlaylistsPage";
 import ImportPlaylistPage from "./pages/ImportPlaylistPage";
 import LoginPage from "./pages/LoginPage";
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/import-playlist" element={<ImportPlaylistPage />} />
           <Route path="/playlists/:id" element={<PlaylistDetailsPage />} />
           <Route path="/liked" element={<LikedSongsPage />} />
+          <Route path="/downloads" element={<DownloadsPage />} />
         </Route>
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />

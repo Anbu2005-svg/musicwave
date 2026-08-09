@@ -1,4 +1,4 @@
-import { FileInput, Globe2, Heart, Home, Library, ListMusic, Plus, Radio, Search, X } from "lucide-react";
+import { FileInput, Globe2, HardDriveDownload, Heart, Home, Library, ListMusic, Plus, Radio, Search, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import EqualizerPanel from "./EqualizerPanel";
 
@@ -11,7 +11,8 @@ const libraryLinks = [
   { to: "/library", label: "Your Library", icon: Library },
   { to: "/online-playlists", label: "Online Playlists", icon: Radio },
   { to: "/import-playlist", label: "Import", icon: FileInput },
-  { to: "/liked", label: "Liked Songs", icon: Heart }
+  { to: "/liked", label: "Liked Songs", icon: Heart },
+  { to: "/downloads", label: "Downloads", icon: HardDriveDownload }
 ];
 
 type Props = {
