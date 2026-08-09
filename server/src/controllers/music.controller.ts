@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { ApiError } from "../utils/ApiError.js";
-import { getPlaylistSongs, getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
+import { getAudioStreamUrl, getPlaylistSongs, getTrendingMusic, getVideoDetails, searchMusic, searchPlaylists } from "../services/youtube.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
 
 const youtubeVideoIdPattern = /^[a-zA-Z0-9_-]{11}$/;
@@ -94,4 +94,53 @@ export async function details(req: Request, res: Response) {
 
   const result = await getVideoDetails(videoId);
   res.json({ result });
+}
+
+export async function download(req: Request, res: Response) {
+  const videoId = String(req.params.videoId ?? "").trim();
+  if (!youtubeVideoIdPattern.test(videoId)) {
+    throw new ApiError(400, "Valid video ID is required");
+  }
+
+  const titleQuery = String(req.query.title ?? "").trim();
+  let songTitle = titleQuery || "musicwave_song";
+
+  if (!titleQuery) {
+    try {
+      const detailsResult = await getVideoDetails(videoId);
+      if (detailsResult?.title) {
+        songTitle = detailsResult.title;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const safeFilename = songTitle
+    .replace(/[/\\?%*:|"<>]/g, "_")
+    .replace(/\s+/g, " ")
+    .trim() || "song";
+
+  const streamUrl = await getAudioStreamUrl(videoId);
+  const axios = (await import("axios")).default;
+
+  const audioRes = await axios.get(streamUrl, {
+    responseType: "stream",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+  });
+
+  const rawContentType = audioRes.headers["content-type"];
+  const contentType = typeof rawContentType === "string" ? rawContentType : "audio/mpeg";
+  const rawContentLength = audioRes.headers["content-length"];
+
+  const encodedFilename = encodeURIComponent(`${safeFilename}.mp3`);
+  res.setHeader("Content-Disposition", `attachment; filename="${encodedFilename}"; filename*=$UTF-8''${encodedFilename}`);
+  res.setHeader("Content-Type", contentType);
+  if (typeof rawContentLength === "string" || typeof rawContentLength === "number") {
+    res.setHeader("Content-Length", rawContentLength);
+  }
+
+  audioRes.data.pipe(res);
 }

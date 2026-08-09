@@ -1,10 +1,11 @@
-import { Heart, ListPlus, Play, Plus, SkipForward } from "lucide-react";
+import { Download, Heart, ListPlus, Play, Plus, SkipForward } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getErrorMessage, likedApi } from "../services/api";
 import { usePlayerStore } from "../stores/playerStore";
 import { useToastStore } from "../stores/toastStore";
 import type { MusicVideo } from "../types";
+import { downloadSong } from "../utils/download";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 
 type Props = {
@@ -57,6 +58,9 @@ export default function SongCard({ song, queue = [] }: Props) {
           disabled={likeMutation.isPending}
         >
           <Heart size={16} fill={isLiked ? "currentColor" : "none"} />
+        </button>
+        <button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-zinc-700" onClick={() => downloadSong(song)} title="Download song">
+          <Download size={16} />
         </button>
         <button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-zinc-700" onClick={() => setPlaylistOpen(true)} title="Add to playlist">
           <Plus size={16} />

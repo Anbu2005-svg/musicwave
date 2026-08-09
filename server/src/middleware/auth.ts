@@ -16,7 +16,8 @@ export type AuthRequest = Request & {
 export async function requireAuth(req: AuthRequest, _res: Response, next: NextFunction) {
   try {
     const header = req.headers.authorization;
-    const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+    const queryToken = typeof req.query.token === "string" ? req.query.token : null;
+    const token = header?.startsWith("Bearer ") ? header.slice(7) : queryToken;
 
     if (!token) {
       throw new ApiError(401, "Authentication required");

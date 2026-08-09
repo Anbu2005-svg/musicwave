@@ -271,3 +271,21 @@ export async function getVideoDetails(videoId: string) {
     handleYoutubeError(error);
   }
 }
+
+export async function getAudioStreamUrl(videoId: string): Promise<string> {
+  try {
+    const youtubedlModule = await import("youtube-dl-exec");
+    const youtubedl = (youtubedlModule.default || youtubedlModule.exec || youtubedlModule) as any;
+    const url = await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
+      getUrl: true,
+      format: "bestaudio/best"
+    });
+    if (!url || typeof url !== "string") {
+      throw new ApiError(500, "Could not extract audio stream");
+    }
+    return url.trim();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(500, "Failed to get song download stream");
+  }
+}

@@ -1,6 +1,7 @@
-import { FastForward, ListMusic, Pause, Play, Plus, Repeat, Rewind, Shuffle, SkipBack, SkipForward, Timer, Volume2 } from "lucide-react";
+import { Download, FastForward, ListMusic, Pause, Play, Plus, Repeat, Rewind, Shuffle, SkipBack, SkipForward, Timer, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePlayerStore } from "../stores/playerStore";
+import { downloadSong } from "../utils/download";
 import AddToPlaylistModal from "./AddToPlaylistModal";
 import YouTubePlayer from "./YouTubePlayer";
 
@@ -139,6 +140,13 @@ export default function PlayerBar() {
             title="Add current song to playlist"
           >
             <Plus size={17} />
+          </button>
+          <button
+            className="grid h-9 w-9 place-items-center rounded-full hover:bg-white/10"
+            onClick={() => downloadSong(current)}
+            title="Download song"
+          >
+            <Download size={17} />
           </button>
           <button
             className={`inline-flex h-9 items-center gap-1 rounded-full px-2 text-sm hover:bg-white/10 ${sleepTimerEndsAt ? "text-wave" : ""}`}
